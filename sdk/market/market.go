@@ -439,8 +439,8 @@ func Start() (bool, error) {
 
 	lastWarmUpTimestampOfInstrument := make(map[string]int64)
 
-	toDate := time.Now().Add(-marketConstants.WarmUpDuration)
-	fromDate := toDate.Add(-2 * marketConstants.WarmUpDuration)
+	toDate := time.Now()
+	fromDate := toDate.Add(-marketConstants.WarmUpDuration)
 	for instrumentID := range requestedInstruments {
 		candles, err := FetchHistoricalData(instrumentIDToSymbolMap[instrumentID], marketConstants.Resolution1m, fromDate, toDate, 0)
 		if err != nil {
@@ -519,30 +519,30 @@ func Start() (bool, error) {
 		}
 	}()
 
-	go func() {
-		// ONLY FOR TESTING
-		now := time.Now()
-		for instrumentID := range requestedInstruments {
-			candles, err := FetchHistoricalData(instrumentIDToSymbolMap[instrumentID], marketConstants.Resolution1m, toDate.Add(time.Hour*24), now, 0)
-			if err != nil {
-				OnFyersWatchError(err)
-				return
-			}
+	// go func() {
+	// 	// ONLY FOR TESTING
+	// 	now := time.Now()
+	// 	for instrumentID := range requestedInstruments {
+	// 		candles, err := FetchHistoricalData(instrumentIDToSymbolMap[instrumentID], marketConstants.Resolution1m, toDate.Add(time.Hour*24), now, 0)
+	// 		if err != nil {
+	// 			OnFyersWatchError(err)
+	// 			return
+	// 		}
 
-			fmt.Println(len(candles), "candles")
+	// 		fmt.Println(len(candles), "candles")
 
-			instrument := instrumentIDToSymbolMap[instrumentID]
-			for _, tick := range candles {
-				if IsMarketWatchActive() {
-					OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Open, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
-					OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Low, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
-					OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.High, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
-					OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Close, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
-					time.Sleep(time.Second)
-				}
-			}
-		}
-	}()
+	// 		instrument := instrumentIDToSymbolMap[instrumentID]
+	// 		for _, tick := range candles {
+	// 			if IsMarketWatchActive() {
+	// 				OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Open, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
+	// 				OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Low, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
+	// 				OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.High, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
+	// 				OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Close, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
+	// 				time.Sleep(time.Second)
+	// 			}
+	// 		}
+	// 	}
+	// }()
 
 	SetIsMarketWatchActive(true)
 	return true, nil
