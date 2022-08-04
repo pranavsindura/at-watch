@@ -1,0 +1,15 @@
+check if reconnect is causing issue, getting no subscription messages
+logic for setting the updated trade in DB
+/help route
+consider sending a file on getclosedtrade since there might be too many
+
+
+DONE - update trades on tick
+DONE - Store updated at field for open trade update
+DONE - show lots, forceexit on closed trades
+SKIP - send .csv instead of .json for backtest
+DONE - should send notification about canEnter and canExit on bootup
+DONE - login should not be allowed if market watch is active
+DONE - improve text (-) is ugly
+DONE - give estimated profit/loss on waiting to exit
+DONE - better user access levels
