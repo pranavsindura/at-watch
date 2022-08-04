@@ -10,14 +10,8 @@ import (
 
 func maintenance(update telegramBot.Update) (*telegramBot.MessageConfig, error) {
 	fyersSDK.SetFyersAccessToken("")
-	_, err := cache.ClearAll()
-	if err != nil {
-		return nil, err
-	}
-	_, err = marketSDK.Stop()
-	if err != nil {
-		return nil, err
-	}
+	cache.ClearAll()
+	marketSDK.Stop()
 
 	return telegramUtils.GenerateReplyMessage(update, "DONE"), nil
 }
