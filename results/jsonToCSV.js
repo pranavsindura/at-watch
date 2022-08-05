@@ -38,8 +38,7 @@ function main() {
   }
   const filePath = path.join(__dirname, fileName);
   console.log("reading", filePath);
-  const allData = JSON.parse(fs.readFileSync(filePath).toString());
-  const trades = allData.data.trades;
+  const trades = JSON.parse(fs.readFileSync(filePath).toString());
   
   const csvPath = path.join(__dirname, fileName.split('.')[0] + '.csv')
   console.log("writing", csvPath);

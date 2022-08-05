@@ -3,6 +3,7 @@ package backtestSDK
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"time"
 
@@ -212,6 +213,10 @@ func (sdk *BacktestSDK) Backtest(instrument string, timeFrame int, fromDate time
 	}
 
 	fmt.Println("got total", instrument, len(allCandles))
+
+	sort.Slice(allCandles, func(i, j int) bool {
+		return allCandles[i].TS < allCandles[j].TS
+	})
 
 	/**
 	 * tick should be sent only after the candles are updated, this is important
