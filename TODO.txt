@@ -4,6 +4,7 @@ logic for setting the updated trade in DB
 consider sending a file on getclosedtrade since there might be too many
 send instrument and tf data on notification waiting to enter and exit
 check why notifications before market opens and after market closes?
+broadcast notification
 
 
 DONE - change TZ to IST

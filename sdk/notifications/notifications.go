@@ -1,16 +1,26 @@
 package notifications
 
 import (
+	"context"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	telegramClient "github.com/pranavsindura/at-watch/connections/telegram"
 	marketConstants "github.com/pranavsindura/at-watch/constants/market"
 	strategyConstants "github.com/pranavsindura/at-watch/constants/strategies"
+	telegramUserModel "github.com/pranavsindura/at-watch/models/telegramUser"
 	telegramHelpers "github.com/pranavsindura/at-watch/telegram/helpers"
 	"github.com/pranavsindura/at-watch/utils"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func NotifyPositionalCanEnter(strategyID primitive.ObjectID, userID primitive.ObjectID, tradeType int, candleClose float64) error {
+func Notify(chatID int64, text string) error {
+	msg := tgbotapi.NewMessage(chatID, text)
+	_, err := telegramClient.Client().Send(msg)
+	return err
+}
+
+func NotifyPositionalCanEnter(strategyID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, tradeType int, candleClose float64) error {
 	chatID, err := telegramHelpers.GetChatIDByUserID(userID)
 	if err != nil {
 		return err
@@ -19,14 +29,17 @@ func NotifyPositionalCanEnter(strategyID primitive.ObjectID, userID primitive.Ob
 	text += "Strategy: " + strategyConstants.StrategyPositional + "\n"
 	text += "Strategy ID: " + strategyID.Hex() + "\n"
 	text += "Trade Type: " + marketConstants.TradeTypeToTextMap[tradeType] + "\n"
+	text += "Instrument: " + instrument + "\n"
+	text += "Time Frame: " + marketConstants.TimeFrameToTextMap[timeFrame] + "\n"
 	text += "Candle Close: " + utils.RoundFloat(candleClose) + "\n"
-	msg := tgbotapi.NewMessage(chatID, text)
-	telegramClient.Client().Send(msg)
-
+	err = Notify(chatID, text)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func NotifyPositionalCanExit(strategyID primitive.ObjectID, userID primitive.ObjectID, exitReason int, candleClose float64, PL float64) error {
+func NotifyPositionalCanExit(strategyID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, exitReason int, candleClose float64, PL float64) error {
 	chatID, err := telegramHelpers.GetChatIDByUserID(userID)
 	if err != nil {
 		return err
@@ -35,14 +48,38 @@ func NotifyPositionalCanExit(strategyID primitive.ObjectID, userID primitive.Obj
 	text += "Strategy: " + strategyConstants.StrategyPositional + "\n"
 	text += "Strategy ID: " + strategyID.Hex() + "\n"
 	text += "Exit Reason: " + marketConstants.TradeExitReasonToTextMap[exitReason] + "\n"
+	text += "Instrument: " + instrument + "\n"
+	text += "Time Frame: " + marketConstants.TimeFrameToTextMap[timeFrame] + "\n"
 	text += "Candle Close: " + utils.RoundFloat(candleClose) + "\n"
 	text += "PL: " + utils.RoundFloat(PL) + "\n"
-	msg := tgbotapi.NewMessage(chatID, text)
-	telegramClient.Client().Send(msg)
+	err = Notify(chatID, text)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func NotifyCreators(text string) {
+func Broadcast(accessLevel int, text string) error {
+	res, err := telegramUserModel.
+		GetTelegramUserCollection().
+		Find(context.Background(), bson.M{
+			"accessLevel": bson.M{
+				"$gte": accessLevel,
+			},
+		})
+	if err != nil {
+		return err
+	}
 
+	for res.Next(context.Background()) {
+		user := telegramUserModel.TelegramUserModel{}
+		res.Decode(&user)
+		err := Notify(user.TelegramChatID, text)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
