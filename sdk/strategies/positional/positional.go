@@ -274,7 +274,7 @@ func (pos *PositionalStrategy) onCandle(candleData *PositionalCandle) {
 
 	pos.openTradeMutex.RLock()
 	if pos.OpenTrade != nil && pos.canExit(candleData, pos.OpenTrade) {
-		fmt.Println("waiting to exit trade", marketConstants.TradeExitReasonToTextMap[pos.getExitReason(candleData, pos.OpenTrade)])
+		// fmt.Println("waiting to exit trade", marketConstants.TradeExitReasonToTextMap[pos.getExitReason(candleData, pos.OpenTrade)])
 		pos.waitingToCloseTradeMutex.Lock()
 		pos.WaitingToCloseTrade = true
 		pos.waitingToCloseTradeMutex.Unlock()
@@ -285,7 +285,7 @@ func (pos *PositionalStrategy) onCandle(candleData *PositionalCandle) {
 	}
 
 	if pos.canEnter(candleData) && (pos.OpenTrade == nil || pos.OpenTrade.TradeType != pos.getTradeType(candleData)) {
-		fmt.Println("waiting to enter trade, but must exit existing trade if any", marketConstants.TradeTypeToTextMap[pos.getTradeType(candleData)])
+		// fmt.Println("waiting to enter trade, but must exit existing trade if any", marketConstants.TradeTypeToTextMap[pos.getTradeType(candleData)])
 		pos.waitingToOpenTradeMutex.Lock()
 		pos.WaitingToOpenTrade = true
 		pos.waitingToOpenTradeMutex.Unlock()

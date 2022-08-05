@@ -197,7 +197,7 @@ func updateCandle(instrument string, timeFrame int, tickData marketTypes.MarketT
 func FetchHistoricalData(instrument string, resolution string, fromDate time.Time, toDate time.Time, contFlag int) ([]fyersTypes.FyersHistoricalCandle, error) {
 	var allCandles = make([]fyersTypes.FyersHistoricalCandle, 0)
 
-	fmt.Println("fetching historical Data", instrument, resolution, fromDate.Format(time.RFC3339), toDate.Format(time.RFC3339), contFlag)
+	fmt.Println("fetching historical Data", instrument, resolution, fromDate.Local().Format(time.RFC3339), toDate.Local().Format(time.RFC3339), contFlag)
 
 	currentDate := time.Time{}
 	copier.Copy(&currentDate, &fromDate)

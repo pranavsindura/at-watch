@@ -4,15 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"time"
+
+	envConstants "github.com/pranavsindura/at-watch/constants/env"
 )
 
+var TZ, _ = time.LoadLocation(os.Getenv(envConstants.TZ))
+
 func GetDateStringFromTimestamp(timestampInSeconds int64) string {
-	return time.Unix(int64(timestampInSeconds), 0).Format(time.RFC850)
+	return time.Unix(int64(timestampInSeconds), 0).Local().Format(time.RFC850)
 }
 
 func GetWeekdayFromTimestamp(timestampInSeconds int64) string {
-	return time.Unix(int64(timestampInSeconds), 0).Weekday().String()
+	return time.Unix(int64(timestampInSeconds), 0).Local().Weekday().String()
 }
 
 func GetRFC3339Date(year string, month string, date string, hour string, minute string, second string) (time.Time, error) {

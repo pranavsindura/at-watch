@@ -2,8 +2,11 @@ check if reconnect is causing issue, getting no subscription messages
 logic for setting the updated trade in DB
 /help route
 consider sending a file on getclosedtrade since there might be too many
+send instrument and tf data on notification waiting to enter and exit
+check why notifications before market opens and after market closes?
 
 
+DONE - change TZ to IST
 DONE - update trades on tick
 DONE - Store updated at field for open trade update
 DONE - show lots, forceexit on closed trades
