@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -218,6 +219,10 @@ func FetchHistoricalData(instrument string, resolution string, fromDate time.Tim
 
 		currentDate = after3Months.AddDate(0, 0, 1)
 	}
+
+	sort.Slice(allCandles, func(i, j int) bool {
+		return allCandles[i].TS < allCandles[j].TS
+	})
 
 	return allCandles, nil
 }
