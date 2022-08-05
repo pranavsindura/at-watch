@@ -24,7 +24,7 @@ type BacktestSDK struct {
 
 func NewBacktestSDK() *BacktestSDK {
 	sdk := &BacktestSDK{
-		backtestEventEmitter: eventemitter.NewEmitter(true),
+		backtestEventEmitter: eventemitter.NewEmitter(false),
 		partialCandle15m:     make(map[string]*fyersTypes.FyersHistoricalCandle),
 	}
 	return sdk
