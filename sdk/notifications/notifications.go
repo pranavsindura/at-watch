@@ -5,6 +5,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	telegramClient "github.com/pranavsindura/at-watch/connections/telegram"
+	"github.com/pranavsindura/at-watch/constants"
 	marketConstants "github.com/pranavsindura/at-watch/constants/market"
 	strategyConstants "github.com/pranavsindura/at-watch/constants/strategies"
 	telegramUserModel "github.com/pranavsindura/at-watch/models/telegramUser"
@@ -61,6 +62,7 @@ func NotifyPositionalCanExit(strategyID primitive.ObjectID, timeFrame int, instr
 }
 
 func Broadcast(accessLevel int, text string) error {
+	serverBroadcastText := "[SERVER BROADCAST][" + constants.AccessLevelToTextMap[accessLevel] + "]\n\n" + text
 	res, err := telegramUserModel.
 		GetTelegramUserCollection().
 		Find(context.Background(), bson.M{
@@ -75,7 +77,7 @@ func Broadcast(accessLevel int, text string) error {
 	for res.Next(context.Background()) {
 		user := telegramUserModel.TelegramUserModel{}
 		res.Decode(&user)
-		err := Notify(user.TelegramChatID, text)
+		err := Notify(user.TelegramChatID, serverBroadcastText)
 		if err != nil {
 			return err
 		}

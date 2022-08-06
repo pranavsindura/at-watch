@@ -1,12 +1,13 @@
-check if reconnect is causing issue, getting no subscription messages
 logic for setting the updated trade in DB
 /help route
 consider sending a file on getclosedtrade since there might be too many
-send instrument and tf data on notification waiting to enter and exit
-check why notifications before market opens and after market closes?
-broadcast notification
+any command without /start will say no results in document, because user doesnt exist, handle that
 
 
+DONE - broadcast notification
+DONE - Internet issue - check if reconnect is causing issue, getting no subscription messages
+DONE - fyers issue - check why notifications before market opens and after market closes?
+DONE - send instrument and tf data on notification waiting to enter and exit
 DONE - change TZ to IST
 DONE - update trades on tick
 DONE - Store updated at field for open trade update

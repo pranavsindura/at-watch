@@ -10,6 +10,7 @@ import (
 	"github.com/pranavsindura/at-watch/cache"
 	"github.com/pranavsindura/at-watch/constants"
 	telegramUserModel "github.com/pranavsindura/at-watch/models/telegramUser"
+	"github.com/pranavsindura/at-watch/sdk/notifications"
 	telegramHelpers "github.com/pranavsindura/at-watch/telegram/helpers"
 	"github.com/pranavsindura/at-watch/utils"
 	telegramUtils "github.com/pranavsindura/at-watch/utils/telegram"
@@ -32,8 +33,10 @@ func updateAccessLevel(update tgbotapi.Update, telegramUserID int64, accessLevel
 	if err != nil {
 		return nil, err
 	}
-	count, err := cache.DeleteUserSession(telegramUserID)
-	fmt.Println(count, err)
+	updatedUser := telegramUserModel.TelegramUserModel{}
+	updateRes.Decode(&updatedUser)
+	cache.DeleteUserSession(telegramUserID)
+	notifications.Notify(updatedUser.TelegramChatID, "Your Updated Access Level: "+strconv.Itoa(int(accessLevel))+" ["+constants.AccessLevelToTextMap[accessLevel]+"]")
 	return telegramUtils.GenerateReplyMessage(update, "Updated "+strconv.Itoa(int(telegramUserID))+"'s Access Level: "+strconv.Itoa(int(accessLevel))+" ["+constants.AccessLevelToTextMap[accessLevel]+"]"), nil
 }
 
