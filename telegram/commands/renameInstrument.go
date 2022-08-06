@@ -7,8 +7,10 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/pranavsindura/at-watch/cache"
+	"github.com/pranavsindura/at-watch/constants"
 	instrumentModel "github.com/pranavsindura/at-watch/models/instrument"
 	fyersSDK "github.com/pranavsindura/at-watch/sdk/fyers"
+	"github.com/pranavsindura/at-watch/sdk/notifications"
 	telegramUtils "github.com/pranavsindura/at-watch/utils/telegram"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -45,6 +47,8 @@ func renameinstrument(update tgbotapi.Update, oldInstrument string, newInstrumen
 	}
 
 	cache.DeleteInstruments()
+
+	notifications.Broadcast(constants.AccessLevelUser, oldInstrument+" has been renamed to "+newInstrument)
 
 	return telegramUtils.GenerateReplyMessage(update, "Renamed Instrument "+oldInstrument+" to "+newInstrument), nil
 }
