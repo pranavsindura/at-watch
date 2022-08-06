@@ -22,6 +22,7 @@ func Init() {
 	err := router.Run(":" + Port)
 
 	if err != nil {
+		notifications.Broadcast(constants.AccessLevelAdmin, "Server has crashed: "+err.Error())
 		log.Fatal().Err(err)
 	}
 }
