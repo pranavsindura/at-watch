@@ -61,8 +61,8 @@ type PositionalStrategy struct {
 	waitingToCloseTradeMutex *sync.RWMutex
 	lastCandleMutex          *sync.RWMutex
 	IsBacktestModeEnabled    bool
-	onCanEnter               func(ID primitive.ObjectID, userID primitive.ObjectID, tradeType int, candleClose float64)
-	onCanExit                func(ID primitive.ObjectID, userID primitive.ObjectID, exitReason int, candleClose float64, PL float64)
+	onCanEnter               func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, tradeType int, candleClose float64)
+	onCanExit                func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, exitReason int, candleClose float64, PL float64)
 }
 
 func NewPositionalStrategy(instrument string, timeFrame int) *PositionalStrategy {
@@ -108,11 +108,11 @@ func (pos *PositionalStrategy) SetID(ID primitive.ObjectID) {
 	pos.ID = ID
 }
 
-func (pos *PositionalStrategy) SetOnCanEnter(onCanEnter func(ID primitive.ObjectID, userID primitive.ObjectID, tradeType int, candleClose float64)) {
+func (pos *PositionalStrategy) SetOnCanEnter(onCanEnter func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, tradeType int, candleClose float64)) {
 	pos.onCanEnter = onCanEnter
 }
 
-func (pos *PositionalStrategy) SetOnCanExit(onCanExit func(ID primitive.ObjectID, userID primitive.ObjectID, exitReason int, candleClose float64, PL float64)) {
+func (pos *PositionalStrategy) SetOnCanExit(onCanExit func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, exitReason int, candleClose float64, PL float64)) {
 	pos.onCanExit = onCanExit
 }
 
@@ -280,7 +280,7 @@ func (pos *PositionalStrategy) onCandle(candleData *PositionalCandle) {
 		pos.waitingToCloseTradeMutex.Unlock()
 
 		if pos.onCanExit != nil {
-			pos.onCanExit(pos.ID, pos.UserID, pos.getExitReason(candleData, pos.OpenTrade), candleData.Candle.Close, pos.OpenTrade.PL)
+			pos.onCanExit(pos.ID, pos.TimeFrame, pos.Instrument, pos.UserID, pos.getExitReason(candleData, pos.OpenTrade), candleData.Candle.Close, pos.OpenTrade.PL)
 		}
 	}
 
@@ -290,7 +290,7 @@ func (pos *PositionalStrategy) onCandle(candleData *PositionalCandle) {
 		pos.WaitingToOpenTrade = true
 		pos.waitingToOpenTradeMutex.Unlock()
 		if pos.onCanEnter != nil {
-			pos.onCanEnter(pos.ID, pos.UserID, pos.getTradeType(candleData), candleData.Candle.Close)
+			pos.onCanEnter(pos.ID, pos.TimeFrame, pos.Instrument, pos.UserID, pos.getTradeType(candleData), candleData.Candle.Close)
 		}
 	}
 	pos.openTradeMutex.RUnlock()
@@ -500,7 +500,7 @@ func (pos *PositionalStrategy) OnWarmUpComplete() {
 	pos.lastCandleMutex.RLock()
 	pos.openTradeMutex.RLock()
 	if pos.WaitingToCloseTrade && pos.onCanExit != nil && pos.LastCandle != nil {
-		pos.onCanExit(pos.ID, pos.UserID, pos.getExitReason(pos.LastCandle, pos.OpenTrade), pos.LastCandle.Candle.Close, pos.OpenTrade.PL)
+		pos.onCanExit(pos.ID, pos.TimeFrame, pos.Instrument, pos.UserID, pos.getExitReason(pos.LastCandle, pos.OpenTrade), pos.LastCandle.Candle.Close, pos.OpenTrade.PL)
 	}
 	pos.openTradeMutex.RUnlock()
 	pos.lastCandleMutex.RUnlock()
@@ -509,7 +509,7 @@ func (pos *PositionalStrategy) OnWarmUpComplete() {
 	pos.waitingToOpenTradeMutex.RLock()
 	pos.lastCandleMutex.RLock()
 	if pos.WaitingToOpenTrade && pos.onCanEnter != nil && pos.LastCandle != nil {
-		pos.onCanEnter(pos.ID, pos.UserID, pos.getTradeType(pos.LastCandle), pos.LastCandle.Candle.Close)
+		pos.onCanEnter(pos.ID, pos.TimeFrame, pos.Instrument, pos.UserID, pos.getTradeType(pos.LastCandle), pos.LastCandle.Candle.Close)
 	}
 	pos.lastCandleMutex.RUnlock()
 	pos.waitingToOpenTradeMutex.RUnlock()

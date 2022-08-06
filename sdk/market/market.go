@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/copier"
+	"github.com/pranavsindura/at-watch/constants"
 	fyersConstants "github.com/pranavsindura/at-watch/constants/fyers"
 	marketConstants "github.com/pranavsindura/at-watch/constants/market"
 	strategyConstants "github.com/pranavsindura/at-watch/constants/strategies"
@@ -254,7 +255,8 @@ func SetIsWarmUpInProgress(isWarmingUp bool) {
 
 func OnFyersWatchConnect() {
 	// TODO: Pranav - if this is called while market is active then its an issue, handle it
-	fmt.Println("connected to fyers server")
+	fmt.Println("connected to fyers socket")
+	notifications.Broadcast(constants.AccessLevelAdmin, "Fyers Socket Connected")
 }
 func OnFyersWatchMessage(notification fyersWatchAPI.Notification) {
 	fmt.Println("received message from fyers server", notification)
@@ -411,17 +413,17 @@ func Start() (bool, error) {
 		}
 		positionalStrategy.SetUserID(strategy.UserID)
 		positionalStrategy.SetID(strategy.ID)
-		positionalStrategy.SetOnCanEnter(func(ID, userID primitive.ObjectID, tradeType int, candleClose float64) {
+		positionalStrategy.SetOnCanEnter(func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, tradeType int, candleClose float64) {
 			if IsMarketWatchActive() && !IsWarmUpInProgress() {
-				err := notifications.NotifyPositionalCanEnter(ID, userID, tradeType, candleClose)
+				err := notifications.NotifyPositionalCanEnter(ID, timeFrame, instrument, userID, tradeType, candleClose)
 				if err != nil {
 					fmt.Println("not able to send notification onCanEnter", err)
 				}
 			}
 		})
-		positionalStrategy.SetOnCanExit(func(ID, userID primitive.ObjectID, forceExit int, candleClose float64, PL float64) {
+		positionalStrategy.SetOnCanExit(func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, forceExit int, candleClose float64, PL float64) {
 			if IsMarketWatchActive() && !IsWarmUpInProgress() {
-				notifications.NotifyPositionalCanExit(ID, userID, forceExit, candleClose, PL)
+				notifications.NotifyPositionalCanExit(ID, timeFrame, instrument, userID, forceExit, candleClose, PL)
 				if err != nil {
 					fmt.Println("not able to send notification onCanExit", err)
 				}
@@ -446,6 +448,10 @@ func Start() (bool, error) {
 
 	toDate := time.Now()
 	fromDate := toDate.Add(-marketConstants.WarmUpDuration)
+
+	// For Testing:
+	// toDate := time.Now().Add(-marketConstants.WarmUpDuration)
+	// fromDate := toDate.Add(-2 * marketConstants.WarmUpDuration)
 	for instrumentID := range requestedInstruments {
 		candles, err := FetchHistoricalData(instrumentIDToSymbolMap[instrumentID], marketConstants.Resolution1m, fromDate, toDate, 0)
 		if err != nil {
@@ -524,8 +530,8 @@ func Start() (bool, error) {
 		}
 	}()
 
+	// For Testing:
 	// go func() {
-	// 	// ONLY FOR TESTING
 	// 	now := time.Now()
 	// 	for instrumentID := range requestedInstruments {
 	// 		candles, err := FetchHistoricalData(instrumentIDToSymbolMap[instrumentID], marketConstants.Resolution1m, toDate.Add(time.Hour*24), now, 0)
@@ -589,6 +595,7 @@ func EnterPositionalTrade(strategyID primitive.ObjectID, price float64, lots int
 		ID:            openTrade.ID,
 		StrategyID:    strategyID,
 		Status:        marketConstants.TradeStatusOpen,
+		StatusText:    marketConstants.TradeStatusOpenText,
 		TradeType:     forceTradeType,
 		TradeTypeText: marketConstants.TradeTypeToTextMap[forceTradeType],
 		Lots:          lots,
