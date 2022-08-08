@@ -228,10 +228,10 @@ func (w *WatchNotifier) OnDisconnected(err error, socket gowebsocket.Socket) {
 func (w *WatchNotifier) addToSubsList(symbols ...string) []string {
 	newSubsL := make([]string, 0, 1)
 	for _, ss := range symbols {
-		if _, ok := w.subscribedSymbols[ss]; !ok {
-			newSubsL = append(newSubsL, ss)
-			w.subscribedSymbols[ss] = true
-		}
+		// if _, ok := w.subscribedSymbols[ss]; !ok {
+		newSubsL = append(newSubsL, ss)
+		w.subscribedSymbols[ss] = true
+		// }
 	}
 	return newSubsL
 }
