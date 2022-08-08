@@ -6,7 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pranavsindura/at-watch/cache"
+	"github.com/pranavsindura/at-watch/constants"
 	fyersSDK "github.com/pranavsindura/at-watch/sdk/fyers"
+	"github.com/pranavsindura/at-watch/sdk/notifications"
 	routerUtils "github.com/pranavsindura/at-watch/utils/router"
 )
 
@@ -18,6 +20,8 @@ func redirect(authCode string) (gin.H, error) {
 
 	fyersSDK.SetFyersAccessToken(accessToken)
 	cache.SetFyersAccessToken(accessToken)
+
+	notifications.Broadcast(constants.AccessLevelAdmin, "Successfully set Fyers Access Token")
 
 	return gin.H{"accessToken": accessToken}, nil
 }
