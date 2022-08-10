@@ -74,7 +74,7 @@ func getStrategy(update tgbotapi.Update) (*tgbotapi.MessageConfig, error) {
 			}
 			fmt.Println(isActiveText)
 			text += "Strategy: " + strategyConstants.StrategyPositional + "\n"
-			text += "ID: " + strategy.ID.Hex() + "\n"
+			text += "Strategy ID: " + strategy.ID.Hex() + "\n"
 			text += "Instrument: " + strategy.Instrument.Symbol + "\n"
 			text += "Time Frame: " + strategy.TimeFrame + "\n"
 			text += "Is Active?: " + isActiveText + "\n"

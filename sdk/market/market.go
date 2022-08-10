@@ -580,6 +580,19 @@ func Stop() (bool, error) {
 	return true, nil
 }
 
+func UnsubscribeStrategy(strategyID primitive.ObjectID) {
+	unsubCandle := strategyIDToCandleSubscription[strategyID]
+	if unsubCandle != nil {
+		unsubCandle()
+		delete(strategyIDToCandleSubscription, strategyID)
+	}
+	unsubTick := strategyIDToTickSubscription[strategyID]
+	if unsubTick != nil {
+		unsubTick()
+		delete(strategyIDToTickSubscription, strategyID)
+	}
+}
+
 func EnterPositionalTrade(strategyID primitive.ObjectID, price float64, lots int, forceTradeType int, entryAt time.Time) (bool, error) {
 	pos, exists := strategyIDToPositionalStrategyMap[strategyID]
 	if !exists {
@@ -735,16 +748,16 @@ func ExitPositionalTrade(strategyID primitive.ObjectID, price float64, forceExit
 	return true, nil
 }
 
-func GetPositionalOpenTrades(userID primitive.ObjectID) ([]*strategies.PositionalTrade, []primitive.ObjectID, error) {
+func GetPositionalOpenTrades(userID primitive.ObjectID) ([]*strategies.PositionalTrade, []*strategies.PositionalStrategy, error) {
 	openTradeList := make([]*strategies.PositionalTrade, 0)
-	strategyIDList := make([]primitive.ObjectID, 0)
+	strategyList := make([]*strategies.PositionalStrategy, 0)
 	posStrategyCursor, err := positionalStrategyModel.GetPositionalStrategyCollection().
 		Find(context.Background(), bson.M{
 			"userID":   userID,
 			"isActive": true,
 		})
 	if err != nil {
-		return make([]*strategies.PositionalTrade, 0), make([]primitive.ObjectID, 0), err
+		return make([]*strategies.PositionalTrade, 0), make([]*strategies.PositionalStrategy, 0), err
 	}
 	for posStrategyCursor.Next(context.Background()) {
 		posStrategy := positionalStrategyModel.PositionalStrategy{}
@@ -753,15 +766,20 @@ func GetPositionalOpenTrades(userID primitive.ObjectID) ([]*strategies.Positiona
 		strategyID := posStrategy.ID
 		strategy, exists := strategyIDToPositionalStrategyMap[strategyID]
 		if !exists {
-			return make([]*strategies.PositionalTrade, 0), make([]primitive.ObjectID, 0), fmt.Errorf("system does not have knowledge of this " + strategyConstants.StrategyPositional + " strategy - " + strategyID.Hex())
+			return make([]*strategies.PositionalTrade, 0), make([]*strategies.PositionalStrategy, 0), fmt.Errorf("system does not have knowledge of this " + strategyConstants.StrategyPositional + " strategy - " + strategyID.Hex())
 		}
 
 		openTrade := strategy.GetOpenTrade()
 		if openTrade != nil {
 			openTradeList = append(openTradeList, openTrade)
-			strategyIDList = append(strategyIDList, strategyID)
+			strategyList = append(strategyList, strategy)
 		}
 	}
 
-	return openTradeList, strategyIDList, nil
+	return openTradeList, strategyList, nil
+}
+
+func RemovePositionalStrategy(strategyID primitive.ObjectID) {
+	UnsubscribeStrategy(strategyID)
+	delete(strategyIDToPositionalStrategyMap, strategyID)
 }

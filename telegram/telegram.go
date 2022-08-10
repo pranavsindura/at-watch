@@ -44,8 +44,8 @@ func HandleUpdate(bot *telegramBot.BotAPI, update telegramBot.Update) {
 	case telegramConstants.CommandStart:
 		execute([]telegramTypes.Middleware{telegramMiddlewares.AccessLevelHandler}, telegramCommands.Start)
 
-	case telegramConstants.CommandReset:
-		// execute([]telegramTypes.Middleware{telegramMiddlewares.AccessLevelHandler}, telegramCommands.Reset)
+	case telegramConstants.CommandStop:
+		execute([]telegramTypes.Middleware{telegramMiddlewares.AccessLevelHandler}, telegramCommands.Stop)
 
 	case telegramConstants.CommandLogin:
 		execute([]telegramTypes.Middleware{telegramMiddlewares.AccessLevelHandler, telegramMiddlewares.MarketNotActiveAndNotWarmingUp}, telegramCommands.Login)
