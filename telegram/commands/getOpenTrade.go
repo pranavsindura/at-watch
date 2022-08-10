@@ -1,7 +1,6 @@
 package telegramCommands
 
 import (
-	"fmt"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -17,12 +16,10 @@ func getOpenTrade(update tgbotapi.Update, userID primitive.ObjectID) (*tgbotapi.
 	text := ""
 	openTradeCount := 0
 	// Positional
-	posOpenTrades, posStrategyIDs, err := marketSDK.GetPositionalOpenTrades(userID)
+	posOpenTrades, posStrategies, err := marketSDK.GetPositionalOpenTrades(userID)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(utils.BruteStringify(posOpenTrades))
 
 	openTradeCount += len(posOpenTrades)
 	if len(posOpenTrades) > 0 {
@@ -30,7 +27,8 @@ func getOpenTrade(update tgbotapi.Update, userID primitive.ObjectID) (*tgbotapi.
 	}
 
 	for idx, openTrade := range posOpenTrades {
-		text += "Strategy ID: " + posStrategyIDs[idx].Hex() + "\n"
+		text += "Strategy ID: " + posStrategies[idx].ID.Hex() + "\n"
+		text += "Instrument: " + posStrategies[idx].Instrument + "\n"
 		text += "Trade Type: " + openTrade.TradeTypeText + "\n"
 		text += "Entry At: " + openTrade.Entry.Candle.DateString + "\n"
 		text += "Entry Price: " + utils.RoundFloat(openTrade.Entry.Candle.Close) + "\n"
