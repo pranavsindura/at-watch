@@ -1,2 +1,2 @@
 .env
-dump.rdb
+*.rdb

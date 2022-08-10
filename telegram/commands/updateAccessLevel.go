@@ -36,8 +36,24 @@ func updateAccessLevel(update tgbotapi.Update, telegramUserID int64, accessLevel
 	updatedUser := telegramUserModel.TelegramUserModel{}
 	updateRes.Decode(&updatedUser)
 	cache.DeleteUserSession(telegramUserID)
-	notifications.Notify(updatedUser.TelegramChatID, "Your Updated Access Level: "+strconv.Itoa(int(accessLevel))+" ["+constants.AccessLevelToTextMap[accessLevel]+"]")
-	return telegramUtils.GenerateReplyMessage(update, "Updated "+strconv.Itoa(int(telegramUserID))+"'s Access Level: "+strconv.Itoa(int(accessLevel))+" ["+constants.AccessLevelToTextMap[accessLevel]+"]"), nil
+
+	notifyText := "Your Updated Access Level: " + strconv.Itoa(int(accessLevel)) + " [" + constants.AccessLevelToTextMap[accessLevel] + "]\n"
+	msgText := "Updated " + strconv.Itoa(int(telegramUserID)) + "'s Access Level: " + strconv.Itoa(int(accessLevel)) + " [" + constants.AccessLevelToTextMap[accessLevel] + "]\n"
+
+	// if accessLevel was == constants.AccessLevelNewUser
+	// execute the /stop flow
+	if accessLevel == constants.AccessLevelNewUser {
+		_, err := stop(update)
+		if err != nil {
+			fmt.Println("error while performing /stop, access level was " + constants.AccessLevelNewUserText)
+			return nil, err
+		}
+		notifyText += "Successfully reset all data\n"
+		msgText += "Successfully reset all data\n"
+	}
+
+	notifications.Notify(updatedUser.TelegramChatID, notifyText)
+	return telegramUtils.GenerateReplyMessage(update, msgText), nil
 }
 
 func UpdateAccessLevel(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
@@ -56,7 +72,7 @@ func UpdateAccessLevel(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 		return err
 	}
 
-	if accessLevel < constants.AccessLevelNone || accessLevel > constants.AccessLevelCreator {
+	if accessLevel < constants.AccessLevelNewUser || accessLevel > constants.AccessLevelCreator {
 		return fmt.Errorf("invalid access level")
 	}
 
@@ -67,7 +83,8 @@ func UpdateAccessLevel(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	}
 
 	// A minimum access level of Admin is required to update the access level
-	requiredAccessLevel := utils.Max(accessLevel, constants.AccessLevelAdmin)
+	// or requested+1
+	requiredAccessLevel := utils.Max(accessLevel+1, constants.AccessLevelAdmin)
 
 	if requestedByUserSession.AccessLevel < requiredAccessLevel {
 		return telegramUtils.GenerateMinimumAccessLevelError(requestedByUserSession.AccessLevel, requiredAccessLevel)

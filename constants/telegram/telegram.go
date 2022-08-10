@@ -8,7 +8,7 @@ import "github.com/pranavsindura/at-watch/constants"
 const (
 	CommandPing              string = "ping"
 	CommandStart             string = "start"
-	CommandReset             string = "reset"
+	CommandStop              string = "stop"
 	CommandLogin             string = "login"
 	CommandMe                string = "me"
 	CommandUpdateAccessLevel string = "updateaccesslevel"
@@ -34,7 +34,7 @@ const (
 var MinimumAccessLevel = map[string]int{
 	CommandPing:              constants.AccessLevelNewUser,
 	CommandStart:             constants.AccessLevelNone,
-	CommandReset:             constants.AccessLevelAdmin,
+	CommandStop:              constants.AccessLevelNewUser,
 	CommandLogin:             constants.AccessLevelAdmin,
 	CommandMe:                constants.AccessLevelNone,
 	CommandUpdateAccessLevel: constants.AccessLevelNone,

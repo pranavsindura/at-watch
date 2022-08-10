@@ -1,10 +1,29 @@
-logic for setting the updated trade in DB
-/help route
-consider sending a file on getclosedtrade since there might be too many
-any command without /start will say no results in document, because user doesnt exist, handle that
+Priority - [0, 4] (Highest <-> Lowest)
+Effort - [0, 4] (Highest <-> Lowest)
+
+TODO
+
+P0E3 - send instrument data in /getopentrade
+P0E2 - check user access level before sending notifications - reset data if access level <= new user
+P0E1 - /stop
+
+P0E0 - send trades as .csv instead of .json
+P0E0 - brokerage mode - equity/futures/
+P1E2 - /who
+P1E1 - /help
+P1E1 - move 15m to strategy constants
+P1E1 - logic for setting the updated trade in DB - with maintenance
+P1E1 - send who executed the command in Admin broadcast
+P2E0 - command history
+P3E3 - any command without /start will say no results in document, because user doesnt exist, handle that
+P3E2 - consider sending a file on getclosedtrade since there might be too many
+P3E0 - move strategy constants to DB
+P3E0 - logs
 
 
-DONE - broadcast notification
+SKIP - positional - entry/exit on flip instead of super trend current state
+DONE - reconnect is causing issue, need fix urgent - resubscribe all instruments on reconnect
+DONE - broadcast notification 
 DONE - Internet issue - check if reconnect is causing issue, getting no subscription messages
 DONE - fyers issue - check why notifications before market opens and after market closes?
 DONE - send instrument and tf data on notification waiting to enter and exit

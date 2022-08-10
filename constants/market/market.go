@@ -102,6 +102,7 @@ const SEBICharge float64 = 0.000001      // Rs 10 per crore -> 10/10^7 -> 10^-6
 const StampDuty float64 = 0.00002        // 0.002% or Rs 200 per crore -> 200/10^7 -> 2 * 10^-5
 
 const WarmUpDuration time.Duration = time.Duration(time.Hour * 24 * 365) // 1 Year
+// For testing:
 // const WarmUpDuration time.Duration = time.Duration(time.Hour * 24 * 90) // 3 Months
 
 const (
