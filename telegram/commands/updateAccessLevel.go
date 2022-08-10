@@ -48,8 +48,8 @@ func updateAccessLevel(update tgbotapi.Update, telegramUserID int64, accessLevel
 			fmt.Println("error while performing /stop, access level was " + constants.AccessLevelNewUserText)
 			return nil, err
 		}
-		notifyText += "Successfully stop all data\n"
-		msgText += "Successfully stop all data\n"
+		notifyText += "Successfully reset all data\n"
+		msgText += "Successfully reset all data\n"
 	}
 
 	notifications.Notify(updatedUser.TelegramChatID, notifyText)
