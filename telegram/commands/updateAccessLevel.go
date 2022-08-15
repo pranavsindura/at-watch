@@ -41,9 +41,9 @@ func updateAccessLevel(update tgbotapi.Update, telegramUserID int64, accessLevel
 	msgText := "Updated " + strconv.Itoa(int(telegramUserID)) + "'s Access Level: " + strconv.Itoa(int(accessLevel)) + " [" + constants.AccessLevelToTextMap[accessLevel] + "]\n"
 
 	// if accessLevel was == constants.AccessLevelNewUser
-	// execute the /stop flow
+	// execute the /stop flow for the user with telegram user id - telegramUserID
 	if accessLevel == constants.AccessLevelNewUser {
-		_, err := stop(update)
+		_, err := stop(update, telegramUserID)
 		if err != nil {
 			fmt.Println("error while performing /stop, access level was " + constants.AccessLevelNewUserText)
 			return nil, err
