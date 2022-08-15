@@ -15,8 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func stop(update telegramBot.Update) (*telegramBot.MessageConfig, error) {
-	telegramUserID := update.Message.From.ID
+func stop(update telegramBot.Update, telegramUserID int64) (*telegramBot.MessageConfig, error) {
 	userSession, err := telegramHelpers.GetUserSession(telegramUserID)
 	if err != nil {
 		fmt.Println("error while fetching user session")
@@ -77,7 +76,8 @@ func stop(update telegramBot.Update) (*telegramBot.MessageConfig, error) {
 }
 
 func Stop(bot *telegramBot.BotAPI, update telegramBot.Update) error {
-	msg, err := stop(update)
+	telegramUserID := update.Message.From.ID
+	msg, err := stop(update, telegramUserID)
 	if err != nil {
 		return err
 	}
