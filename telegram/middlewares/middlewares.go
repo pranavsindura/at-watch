@@ -17,7 +17,7 @@ func AccessLevelHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, command st
 		return fmt.Errorf("unable to determine access level for this command")
 	}
 	requiredAccessLevel := telegramConstants.MinimumAccessLevel[command]
-	if requiredAccessLevel == constants.AccessLevelNone {
+	if requiredAccessLevel == constants.AccessLevelCustom {
 		return nil
 	}
 	telegramUserID := update.Message.From.ID
