@@ -33,11 +33,11 @@ const (
 
 var MinimumAccessLevel = map[string]int{
 	CommandPing:              constants.AccessLevelNewUser,
-	CommandStart:             constants.AccessLevelCustom,
+	CommandStart:             constants.AccessLevelNone,
 	CommandStop:              constants.AccessLevelNewUser,
 	CommandLogin:             constants.AccessLevelAdmin,
-	CommandMe:                constants.AccessLevelCustom,
-	CommandUpdateAccessLevel: constants.AccessLevelCustom,
+	CommandMe:                constants.AccessLevelNone,
+	CommandUpdateAccessLevel: constants.AccessLevelNone,
 	CommandBacktest:          constants.AccessLevelUser,
 	CommandMaintenance:       constants.AccessLevelAdmin,
 	CommandAddStrategy:       constants.AccessLevelUser,

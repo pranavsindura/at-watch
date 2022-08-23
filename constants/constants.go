@@ -11,7 +11,7 @@ const (
 )
 
 const (
-	AccessLevelCustom = iota
+	AccessLevelNone = iota
 	AccessLevelNewUser
 	AccessLevelUser
 	AccessLevelAdmin
@@ -19,7 +19,7 @@ const (
 )
 
 const (
-	AccessLevelCustomText  string = "CUSTOM"
+	AccessLevelNoneText    string = "NONE"
 	AccessLevelNewUserText string = "NEW_USER"
 	AccessLevelUserText    string = "USER"
 	AccessLevelAdminText   string = "ADMIN"
@@ -27,7 +27,7 @@ const (
 )
 
 var AccessLevelToTextMap = map[int]string{
-	AccessLevelCustom:  AccessLevelCustomText,
+	AccessLevelNone:    AccessLevelNoneText,
 	AccessLevelNewUser: AccessLevelNewUserText,
 	AccessLevelUser:    AccessLevelUserText,
 	AccessLevelAdmin:   AccessLevelAdminText,

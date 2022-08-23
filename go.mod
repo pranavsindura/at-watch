@@ -16,7 +16,6 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tidwall/gjson v1.10.1
 	github.com/vansante/go-event-emitter v1.0.2
-	github.com/yukithm/json2csv v0.1.2
 	go.mongodb.org/mongo-driver v1.9.1
 )
 

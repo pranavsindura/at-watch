@@ -26,23 +26,10 @@ func CalculateZerodhaNSEFuturesCharges(buyPrice float64, sellPrice float64, qty 
 	turnover := (buyPrice + sellPrice) * float64(qty)
 	zerodhaBrokerage := CalculateZerodhaFuturesBrokerage(buyPrice, float64(qty)) + CalculateZerodhaFuturesBrokerage(sellPrice, float64(qty))
 	stt := sellPrice * float64(qty) * marketConstants.FuturesSTTPerc
-	nseTxnCharge := turnover * marketConstants.NSEFuturesTXNChargePerc
+	nseTxnCharge := turnover * marketConstants.NSETXNChargePerc
+	gst := (zerodhaBrokerage + nseTxnCharge) * marketConstants.GSTPerc
 	sebiCharge := turnover * marketConstants.SEBICharge
-	gst := (zerodhaBrokerage + sebiCharge + nseTxnCharge) * marketConstants.GSTPerc
-	stampDuty := buyPrice * float64(qty) * marketConstants.FuturesStampDuty
-
-	charges := math.Ceil(zerodhaBrokerage + stt + nseTxnCharge + gst + sebiCharge + stampDuty)
-	return charges
-}
-
-func CalculateZerodhaNSEOptionsCharges(buyPrice float64, sellPrice float64, qty int) float64 {
-	turnover := (buyPrice + sellPrice) * float64(qty)
-	zerodhaBrokerage := marketConstants.ZerodhaOptionsBrokerage * 2
-	stt := sellPrice * float64(qty) * marketConstants.OptionsSTTPerc
-	nseTxnCharge := turnover * marketConstants.NSEOptionsTXNChargePerc
-	sebiCharge := turnover * marketConstants.SEBICharge
-	gst := (zerodhaBrokerage + sebiCharge + nseTxnCharge) * marketConstants.GSTPerc
-	stampDuty := buyPrice * float64(qty) * marketConstants.OptionsStampDuty
+	stampDuty := buyPrice * float64(qty) * marketConstants.StampDuty
 
 	charges := math.Ceil(zerodhaBrokerage + stt + nseTxnCharge + gst + sebiCharge + stampDuty)
 	return charges

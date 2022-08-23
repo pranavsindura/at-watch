@@ -1,4 +1,4 @@
-package positionalStrategy
+package strategies
 
 import (
 	"fmt"
@@ -42,7 +42,6 @@ type PositionalTrade struct {
 	ExitReasonText string             `json:"exitReasonText"`
 	Brokerage      float64            `json:"brokerage"`
 	UpdatedAtTS    int64              `json:"updatedAtTS"`
-	UpdatedAtLTP   float64            `json:"updatedAtLTP"`
 }
 
 type PositionalStrategy struct {
@@ -66,10 +65,10 @@ type PositionalStrategy struct {
 	onCanExit                func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, exitReason int, candleClose float64, PL float64)
 }
 
-func NewPositionalStrategy(instrument string) *PositionalStrategy {
+func NewPositionalStrategy(instrument string, timeFrame int) *PositionalStrategy {
 	strategy := &PositionalStrategy{
 		Instrument:          instrument,
-		TimeFrame:           positionalStrategyConstants.TimeFrame,
+		TimeFrame:           timeFrame,
 		OpenTrade:           nil,
 		ClosedTrades:        make([]*PositionalTrade, 0),
 		WaitingToOpenTrade:  false,
@@ -342,7 +341,6 @@ func (pos *PositionalStrategy) OnTick(candle *fyersTypes.FyersHistoricalCandle) 
 	if pos.OpenTrade != nil {
 		pos.OpenTrade = pos.update(candleData, pos.OpenTrade)
 		pos.OpenTrade.UpdatedAtTS = candle.TS
-		pos.OpenTrade.UpdatedAtLTP = candle.Close
 	}
 	pos.openTradeMutex.Unlock()
 }
@@ -380,18 +378,15 @@ func (pos *PositionalStrategy) Enter(price float64, lots int, entryAt time.Time,
 	pos.lastCandleMutex.RUnlock()
 	posCandle := pos.createCandle(candle)
 
-	// if user enters a price which causes supertrend to recommend a trade with a different tradeType than what the user sends
-
-	// tradeType := pos.getTradeType(posCandle)
-	// if !pos.IsBacktestModeEnabled {
-	// 	if tradeType == marketConstants.TradeTypeNone {
-	// 		return nil, fmt.Errorf("trade type is " + marketConstants.TradeTypeNoneText + ", unable to enter")
-	// 	}
-	// dont check if they match
-	// if tradeType != forceTradeType {
-	// 	return nil, fmt.Errorf("trade type is " + marketConstants.TradeTypeToTextMap[tradeType] + ", but received " + marketConstants.TradeTypeToTextMap[forceTradeType])
-	// }
-	// }
+	tradeType := pos.getTradeType(posCandle)
+	if !pos.IsBacktestModeEnabled {
+		if tradeType == marketConstants.TradeTypeNone {
+			return nil, fmt.Errorf("trade type is " + marketConstants.TradeTypeNoneText + ", unable to enter")
+		}
+		if tradeType != forceTradeType {
+			return nil, fmt.Errorf("trade type is " + marketConstants.TradeTypeToTextMap[tradeType] + ", but received " + marketConstants.TradeTypeToTextMap[forceTradeType])
+		}
+	}
 
 	trade := pos.enter(posCandle, lots, forceTradeType)
 	if trade != nil {
@@ -520,16 +515,16 @@ func (pos *PositionalStrategy) OnWarmUpComplete() {
 	pos.waitingToOpenTradeMutex.RUnlock()
 }
 
-func BacktestPositionalStrategy(backtestSDK *backtestSDK.BacktestSDK, instrument string, fromDate string, toDate string, lots int) (float64, float64, float64, int, int, int, float64, []*PositionalTrade) {
-	pos := NewPositionalStrategy(instrument)
+func BacktestPositionalStrategy(backtestSDK *backtestSDK.BacktestSDK, instrument string, timeFrame int, fromDate string, toDate string, lots int) (float64, float64, float64, int, int, int, float64, []*PositionalTrade) {
+	pos := NewPositionalStrategy(instrument, timeFrame)
 	pos.SetIsBacktestModeEnabled(true)
-	backtestSDK.SubscribeCandle(instrument, positionalStrategyConstants.TimeFrame, pos.CreateOnCandleForBacktest(func(candle *fyersTypes.FyersHistoricalCandle) int {
+	backtestSDK.SubscribeCandle(instrument, marketConstants.TimeFrame15m, pos.CreateOnCandleForBacktest(func(candle *fyersTypes.FyersHistoricalCandle) int {
 		return lots
 	}))
 
 	start, _ := time.Parse(time.RFC3339, fromDate)
 	end, _ := time.Parse(time.RFC3339, toDate)
-	backtestSDK.Backtest(instrument, positionalStrategyConstants.TimeFrame, start, end)
+	backtestSDK.Backtest(instrument, timeFrame, start, end)
 
 	loss := 0.
 	lossCount := 0

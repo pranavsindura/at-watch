@@ -37,12 +37,12 @@ func (sdk *BacktestSDK) generateEventKey(event string, instrument string, timeFr
 	return eventemitter.EventType(event + ":" + instrument + ":" + strconv.Itoa(timeFrame))
 }
 
-func (sdk *BacktestSDK) SubscribeTick(instrument string, timeFrame int, callback func(*fyersTypes.FyersHistoricalCandle)) func() {
+func (sdk *BacktestSDK) SubscribeTick(instrument string, timeFrame int, callback func(fyersTypes.FyersHistoricalCandle)) func() {
 	key := sdk.generateEventKey(marketConstants.MarketEventTick, instrument, timeFrame)
 
 	var handlerFn eventemitter.HandleFunc = func(arguments ...interface{}) {
 		var candle fyersTypes.FyersHistoricalCandle = arguments[0].(fyersTypes.FyersHistoricalCandle)
-		callback(&candle)
+		callback(candle)
 	}
 
 	listener := sdk.backtestEventEmitter.AddListener(key, handlerFn)

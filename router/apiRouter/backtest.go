@@ -9,14 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 	marketConstants "github.com/pranavsindura/at-watch/constants/market"
 	backtestSDK "github.com/pranavsindura/at-watch/sdk/backtest"
-	positionalStrategy "github.com/pranavsindura/at-watch/sdk/strategies/positional"
+	strategies "github.com/pranavsindura/at-watch/sdk/strategies/positional"
 	fyersTypes "github.com/pranavsindura/at-watch/types/fyers"
 	routerUtils "github.com/pranavsindura/at-watch/utils/router"
 )
 
 func backtest(instrument string, timeFrame int, fromDate string, toDate string, lots int) (gin.H, error) {
 	backtestSDK := backtestSDK.NewBacktestSDK()
-	pos := positionalStrategy.NewPositionalStrategy(instrument)
+	pos := strategies.NewPositionalStrategy(instrument, timeFrame)
 	backtestSDK.SubscribeCandle(instrument, marketConstants.TimeFrame15m, pos.CreateOnCandleForBacktest(func(candle *fyersTypes.FyersHistoricalCandle) int {
 		return lots
 	}))

@@ -1,7 +1,3 @@
-// Type can have a None Type
-// Type to Text Map can have a mapping from None to NoneText
-// but a reverse map from Text to Type should not have NoneText to None mapping because None is only an internal type
-
 package marketConstants
 
 import "time"
@@ -97,17 +93,13 @@ var TradeExitReasonToTextMap map[int]string = map[int]string{
 	TradeExitReasonUserForceExit:   TradeExitReasonUserForceExitText,
 }
 
-const ZerodhaOptionsBrokerage float64 = 20.        // flat Rs. 20/-
 const ZerodhaFuturesBrokeragePerc float64 = 0.0003 // 0.03% -> 0.0003
 const ZerodhaFuturesBrokerageFixed float64 = 20
-const OptionsSTTPerc float64 = 0.0005           // 0.05% on sell side (on premium)
-const FuturesSTTPerc float64 = 0.0001           // 0.01% on sell side
-const NSEFuturesTXNChargePerc float64 = 0.00002 // 0.002%
-const NSEOptionsTXNChargePerc float64 = 0.00053 // 0.053%
-const GSTPerc float64 = 0.18                    // 18%
-const SEBICharge float64 = 0.000001             // Rs 10 per crore -> 10/10^7 -> 10^-6
-const FuturesStampDuty float64 = 0.00002        // 0.002% or ₹200 / crore (on the buy side) -> 200/10^7 -> 2 * 10^-5
-const OptionsStampDuty float64 = 0.00003        // 0.003% or ₹300 / crore (on the buy side) -> 300/10^7 -> 3 * 10^-5
+const FuturesSTTPerc float64 = 0.0001    // 0.01%
+const NSETXNChargePerc float64 = 0.00002 // 0.002%
+const GSTPerc float64 = 0.18             // 18%
+const SEBICharge float64 = 0.000001      // Rs 10 per crore -> 10/10^7 -> 10^-6
+const StampDuty float64 = 0.00002        // 0.002% or Rs 200 per crore -> 200/10^7 -> 2 * 10^-5
 
 const WarmUpDuration time.Duration = time.Duration(time.Hour * 24 * 365) // 1 Year
 // For testing:
