@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	marketConstants "github.com/pranavsindura/at-watch/constants/market"
 	strategyConstants "github.com/pranavsindura/at-watch/constants/strategies"
+	positionalStrategyConstants "github.com/pranavsindura/at-watch/constants/strategies/positional"
 	instrumentModel "github.com/pranavsindura/at-watch/models/instrument"
 	positionalStrategyModel "github.com/pranavsindura/at-watch/models/positionalStrategy"
 	telegramHelpers "github.com/pranavsindura/at-watch/telegram/helpers"
@@ -22,7 +23,7 @@ import (
 // 	<timeFrame>`
 // }
 
-func addStrategy(update tgbotapi.Update, strategy string, instrument string, timeFrameText string) (*tgbotapi.MessageConfig, error) {
+func addStrategy(update tgbotapi.Update, strategy string, instrument string) (*tgbotapi.MessageConfig, error) {
 	telegramUserID := update.Message.From.ID
 	userSession, err := telegramHelpers.GetUserSession(telegramUserID)
 	if err != nil {
@@ -49,7 +50,7 @@ func addStrategy(update tgbotapi.Update, strategy string, instrument string, tim
 		positionalStrategy := positionalStrategyModel.PositionalStrategy{
 			UserID:       userID,
 			InstrumentID: instrumentObj.ID,
-			TimeFrame:    timeFrameText,
+			TimeFrame:    marketConstants.TimeFrameToTextMap[positionalStrategyConstants.TimeFrame],
 			IsActive:     true,
 		}
 		coll := positionalStrategyModel.GetPositionalStrategyCollection()
@@ -68,15 +69,14 @@ func AddStrategy(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	argList := strings.Split(argString, "\n")
 	fmt.Println(argString)
 	fmt.Println(argList)
-	if len(argList) != 3 {
+	if len(argList) != 2 {
 		return fmt.Errorf("invalid arguments")
 	}
 
 	strategy := argList[0]
 	instrument := argList[1]
-	timeFrameText := argList[2]
 
-	fmt.Println(strategy, instrument, timeFrameText)
+	fmt.Println(strategy, instrument)
 
 	instruments, err := telegramHelpers.GetInstruments()
 
@@ -95,11 +95,8 @@ func AddStrategy(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	if !isInstrumentValid {
 		return fmt.Errorf("invalid instrument")
 	}
-	if _, exists := marketConstants.TextToTimeFrameMap[timeFrameText]; !exists {
-		return fmt.Errorf("invalid timeFrame")
-	}
 
-	msg, err := addStrategy(update, strategy, instrument, timeFrameText)
+	msg, err := addStrategy(update, strategy, instrument)
 
 	if err != nil {
 		return err
