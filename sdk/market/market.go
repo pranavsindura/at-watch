@@ -21,7 +21,7 @@ import (
 	fyersSDK "github.com/pranavsindura/at-watch/sdk/fyers"
 	fyersWatchAPI "github.com/pranavsindura/at-watch/sdk/fyersWatch/api"
 	"github.com/pranavsindura/at-watch/sdk/notifications"
-	strategies "github.com/pranavsindura/at-watch/sdk/strategies/positional"
+	postionalStrategy "github.com/pranavsindura/at-watch/sdk/strategies/positional"
 	fyersTypes "github.com/pranavsindura/at-watch/types/fyers"
 	indicatorTypes "github.com/pranavsindura/at-watch/types/indicators"
 	marketTypes "github.com/pranavsindura/at-watch/types/market"
@@ -40,7 +40,7 @@ var isWarmUpInProgress = false
 var marketEventEmitter *eventemitter.Emitter = eventemitter.NewEmitter(true)
 var partialCandle15m = make(map[string]*fyersTypes.FyersHistoricalCandle)
 
-var strategyIDToPositionalStrategyMap = make(map[primitive.ObjectID]*strategies.PositionalStrategy)
+var strategyIDToPositionalStrategyMap = make(map[primitive.ObjectID]*postionalStrategy.PositionalStrategy)
 
 var strategyIDToTickSubscription = make(map[primitive.ObjectID]func())
 var strategyIDToCandleSubscription = make(map[primitive.ObjectID]func())
@@ -296,7 +296,7 @@ func Start() (bool, error) {
 	defer SetIsWarmUpInProgress(false)
 
 	partialCandle15m = make(map[string]*fyersTypes.FyersHistoricalCandle)
-	strategyIDToPositionalStrategyMap = make(map[primitive.ObjectID]*strategies.PositionalStrategy)
+	strategyIDToPositionalStrategyMap = make(map[primitive.ObjectID]*postionalStrategy.PositionalStrategy)
 	strategyIDToTickSubscription = make(map[primitive.ObjectID]func())
 	strategyIDToCandleSubscription = make(map[primitive.ObjectID]func())
 	fyersWatchNotificationChannel = make(chan fyersWatchAPI.Notification)
@@ -359,7 +359,7 @@ func Start() (bool, error) {
 		positionalStrategyIDToOpenTradeMap[openTrade.StrategyID] = openTrade
 	}
 
-	instrumentIDToPositionalStrategyListMap := make(map[primitive.ObjectID][]*strategies.PositionalStrategy)
+	instrumentIDToPositionalStrategyListMap := make(map[primitive.ObjectID][]*postionalStrategy.PositionalStrategy)
 	positionalStrategiesCursor, err := positionalStrategyModel.GetPositionalStrategyCollection().Find(context.Background(), bson.M{"isActive": true})
 	if err != nil {
 		OnFyersWatchError(err)
@@ -371,14 +371,14 @@ func Start() (bool, error) {
 		positionalStrategiesCursor.Decode(&strategy)
 		requestedInstruments[strategy.InstrumentID] = true
 
-		positionalStrategy := strategies.NewPositionalStrategy(instrumentIDToSymbolMap[strategy.InstrumentID], marketConstants.TextToTimeFrameMap[strategy.TimeFrame])
+		pos := postionalStrategy.NewPositionalStrategy(instrumentIDToSymbolMap[strategy.InstrumentID])
 		if openTrade, exists := positionalStrategyIDToOpenTradeMap[strategy.ID]; exists {
-			positionalStrategy.OpenTrade = &strategies.PositionalTrade{
+			pos.OpenTrade = &postionalStrategy.PositionalTrade{
 				ID:            openTrade.ID,
 				TradeType:     openTrade.TradeType,
 				TradeTypeText: openTrade.TradeTypeText,
 				Lots:          openTrade.Lots,
-				Entry: &strategies.PositionalCandle{
+				Entry: &postionalStrategy.PositionalCandle{
 					Candle: &fyersTypes.FyersHistoricalCandle{
 						TS:         openTrade.Entry.Candle.TS,
 						DateString: openTrade.Entry.Candle.DateString,
@@ -389,7 +389,7 @@ func Start() (bool, error) {
 						Close:      openTrade.Entry.Candle.Close,
 						Volume:     openTrade.Entry.Candle.Volume,
 					},
-					Indicators: &strategies.PositionalIndicators{
+					Indicators: &postionalStrategy.PositionalIndicators{
 						SuperTrend: &indicatorTypes.SuperTrendData{
 							Index:               openTrade.Entry.Indicators.SuperTrend.Index,
 							ATR:                 openTrade.Entry.Indicators.SuperTrend.ATR,
@@ -411,9 +411,9 @@ func Start() (bool, error) {
 				Brokerage:      0.,
 			}
 		}
-		positionalStrategy.SetUserID(strategy.UserID)
-		positionalStrategy.SetID(strategy.ID)
-		positionalStrategy.SetOnCanEnter(func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, tradeType int, candleClose float64) {
+		pos.SetUserID(strategy.UserID)
+		pos.SetID(strategy.ID)
+		pos.SetOnCanEnter(func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, tradeType int, candleClose float64) {
 			if IsMarketWatchActive() && !IsWarmUpInProgress() {
 				err := notifications.NotifyPositionalCanEnter(ID, timeFrame, instrument, userID, tradeType, candleClose)
 				if err != nil {
@@ -421,7 +421,7 @@ func Start() (bool, error) {
 				}
 			}
 		})
-		positionalStrategy.SetOnCanExit(func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, forceExit int, candleClose float64, PL float64) {
+		pos.SetOnCanExit(func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, forceExit int, candleClose float64, PL float64) {
 			if IsMarketWatchActive() && !IsWarmUpInProgress() {
 				notifications.NotifyPositionalCanExit(ID, timeFrame, instrument, userID, forceExit, candleClose, PL)
 				if err != nil {
@@ -429,15 +429,15 @@ func Start() (bool, error) {
 				}
 			}
 		})
-		unsubCandle := SubscribeCandle(instrumentIDToSymbolMap[strategy.InstrumentID], marketConstants.TextToTimeFrameMap[strategy.TimeFrame], positionalStrategy.OnCandle)
-		unsubTick := SubscribeTick(instrumentIDToSymbolMap[strategy.InstrumentID], marketConstants.TextToTimeFrameMap[strategy.TimeFrame], positionalStrategy.OnTick)
-		strategyIDToPositionalStrategyMap[strategy.ID] = positionalStrategy
+		unsubCandle := SubscribeCandle(instrumentIDToSymbolMap[strategy.InstrumentID], marketConstants.TextToTimeFrameMap[strategy.TimeFrame], pos.OnCandle)
+		unsubTick := SubscribeTick(instrumentIDToSymbolMap[strategy.InstrumentID], marketConstants.TextToTimeFrameMap[strategy.TimeFrame], pos.OnTick)
+		strategyIDToPositionalStrategyMap[strategy.ID] = pos
 
 		if _, ok := instrumentIDToPositionalStrategyListMap[strategy.InstrumentID]; !ok {
-			instrumentIDToPositionalStrategyListMap[strategy.InstrumentID] = make([]*strategies.PositionalStrategy, 0)
+			instrumentIDToPositionalStrategyListMap[strategy.InstrumentID] = make([]*postionalStrategy.PositionalStrategy, 0)
 		}
 
-		instrumentIDToPositionalStrategyListMap[strategy.InstrumentID] = append(instrumentIDToPositionalStrategyListMap[strategy.InstrumentID], positionalStrategy)
+		instrumentIDToPositionalStrategyListMap[strategy.InstrumentID] = append(instrumentIDToPositionalStrategyListMap[strategy.InstrumentID], pos)
 		strategyIDToCandleSubscription[strategy.ID] = unsubCandle
 		strategyIDToTickSubscription[strategy.ID] = unsubTick
 	}
@@ -448,10 +448,10 @@ func Start() (bool, error) {
 
 	toDate := time.Now()
 	fromDate := toDate.Add(-marketConstants.WarmUpDuration)
-
 	// For Testing:
 	// toDate := time.Now().Add(-marketConstants.WarmUpDuration)
 	// fromDate := toDate.Add(-2 * marketConstants.WarmUpDuration)
+
 	for instrumentID := range requestedInstruments {
 		candles, err := FetchHistoricalData(instrumentIDToSymbolMap[instrumentID], marketConstants.Resolution1m, fromDate, toDate, 0)
 		if err != nil {
@@ -748,16 +748,16 @@ func ExitPositionalTrade(strategyID primitive.ObjectID, price float64, forceExit
 	return true, nil
 }
 
-func GetPositionalOpenTrades(userID primitive.ObjectID) ([]*strategies.PositionalTrade, []*strategies.PositionalStrategy, error) {
-	openTradeList := make([]*strategies.PositionalTrade, 0)
-	strategyList := make([]*strategies.PositionalStrategy, 0)
+func GetPositionalOpenTrades(userID primitive.ObjectID) ([]*postionalStrategy.PositionalTrade, []*postionalStrategy.PositionalStrategy, error) {
+	openTradeList := make([]*postionalStrategy.PositionalTrade, 0)
+	strategyList := make([]*postionalStrategy.PositionalStrategy, 0)
 	posStrategyCursor, err := positionalStrategyModel.GetPositionalStrategyCollection().
 		Find(context.Background(), bson.M{
 			"userID":   userID,
 			"isActive": true,
 		})
 	if err != nil {
-		return make([]*strategies.PositionalTrade, 0), make([]*strategies.PositionalStrategy, 0), err
+		return make([]*postionalStrategy.PositionalTrade, 0), make([]*postionalStrategy.PositionalStrategy, 0), err
 	}
 	for posStrategyCursor.Next(context.Background()) {
 		posStrategy := positionalStrategyModel.PositionalStrategy{}
@@ -766,7 +766,7 @@ func GetPositionalOpenTrades(userID primitive.ObjectID) ([]*strategies.Positiona
 		strategyID := posStrategy.ID
 		strategy, exists := strategyIDToPositionalStrategyMap[strategyID]
 		if !exists {
-			return make([]*strategies.PositionalTrade, 0), make([]*strategies.PositionalStrategy, 0), fmt.Errorf("system does not have knowledge of this " + strategyConstants.StrategyPositional + " strategy - " + strategyID.Hex())
+			return make([]*postionalStrategy.PositionalTrade, 0), make([]*postionalStrategy.PositionalStrategy, 0), fmt.Errorf("system does not have knowledge of this " + strategyConstants.StrategyPositional + " strategy - " + strategyID.Hex())
 		}
 
 		openTrade := strategy.GetOpenTrade()

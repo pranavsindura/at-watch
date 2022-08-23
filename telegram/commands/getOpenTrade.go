@@ -34,6 +34,7 @@ func getOpenTrade(update tgbotapi.Update, userID primitive.ObjectID) (*tgbotapi.
 		text += "Entry Price: " + utils.RoundFloat(openTrade.Entry.Candle.Close) + "\n"
 		text += "Lots: " + strconv.Itoa(openTrade.Lots) + "\n"
 		text += "PL: " + utils.RoundFloat(openTrade.PL) + "\n"
+		text += "LTP: " + utils.RoundFloat(openTrade.UpdatedAtLTP) + "\n"
 		text += "Updated At: " + utils.GetDateStringFromTimestamp(openTrade.UpdatedAtTS) + "\n"
 		text += "\n"
 	}
