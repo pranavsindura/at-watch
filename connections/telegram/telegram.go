@@ -4,6 +4,7 @@ import (
 	"os"
 
 	telegramBot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/pranavsindura/at-watch/constants"
 	envConstants "github.com/pranavsindura/at-watch/constants/env"
 	"github.com/rs/zerolog/log"
 )
@@ -18,7 +19,9 @@ func Init() {
 		return
 	}
 	Bot = newBot
-	// Bot.Debug = true
+	if os.Getenv(envConstants.Mode) == constants.ModeDevelopment {
+		Bot.Debug = true
+	}
 }
 
 func Client() *telegramBot.BotAPI {
