@@ -2,7 +2,6 @@ package telegramCommands
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -20,8 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func getClosedTrade(update tgbotapi.Update, userID primitive.ObjectID) (*tgbotapi.MessageConfig, error) {
-	text := ""
+func getClosedTrade(bot *tgbotapi.BotAPI, update tgbotapi.Update, userID primitive.ObjectID) error {
 	closedTradeCount := 0
 	// Positional
 	type PositionalStrategyAggregateResult struct {
@@ -51,35 +49,55 @@ func getClosedTrade(update tgbotapi.Update, userID primitive.ObjectID) (*tgbotap
 		)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	isFirstPosClosedTrade := true
+	type PositionalStrategySendResult struct {
+		StrategyID string `json:"strategyID"`
+		Instrument string `json:"instrument"`
+		TradeType  string `json:"tradeType"`
+		Lots       string `json:"lots"`
+		EntryAt    string `json:"entryAt"`
+		ExitAt     string `json:"exitAt"`
+		EntryPrice string `json:"entryPrice"`
+		ExitPrice  string `json:"exitPrice"`
+		PL         string `json:"PL"`
+		Brokerage  string `json:"brokerage"`
+		ExitReason string `json:"exitReason"`
+	}
+	var posClosedTrades []PositionalStrategySendResult = make([]PositionalStrategySendResult, 0)
 	for posClosedTradesCursor.Next(context.Background()) {
-		if isFirstPosClosedTrade {
-			text += strategyConstants.StrategyPositional + "\n"
-			isFirstPosClosedTrade = false
-		}
-		closedTradeCount++
 		aggResult := PositionalStrategyAggregateResult{}
 		posClosedTradesCursor.Decode(&aggResult)
-		text += "Strategy ID: " + aggResult.ID.Hex() + "\n"
-		text += "Instrument: " + aggResult.Instrument.Symbol + "\n"
-		text += "Trade Type: " + aggResult.Trade.TradeTypeText + "\n"
-		text += "Lots: " + strconv.Itoa(aggResult.Trade.Lots) + "\n"
-		text += "Entry At: " + aggResult.Trade.Entry.Candle.DateString + "\n"
-		text += "Exit At: " + aggResult.Trade.Exit.Candle.DateString + "\n"
-		text += "Entry Price: " + fmt.Sprintf("%.2f", aggResult.Trade.Entry.Candle.Close) + "\n"
-		text += "Exit Price: " + fmt.Sprintf("%.2f", aggResult.Trade.Exit.Candle.Close) + "\n"
-		text += "PL: " + utils.RoundFloat(aggResult.Trade.PL) + "\n"
-		text += "Brokerage: " + fmt.Sprintf("%.2f", aggResult.Trade.Brokerage) + "\n"
-		text += "Exit Reason: " + aggResult.Trade.ExitReasonText + "\n"
-		text += "\n"
+
+		trade := PositionalStrategySendResult{
+			StrategyID: aggResult.ID.Hex(),
+			Instrument: aggResult.Instrument.Symbol,
+			TradeType:  aggResult.Trade.TradeTypeText,
+			Lots:       strconv.Itoa(aggResult.Trade.Lots),
+			EntryAt:    aggResult.Trade.Entry.Candle.DateString,
+			ExitAt:     aggResult.Trade.Exit.Candle.DateString,
+			EntryPrice: utils.RoundFloat(aggResult.Trade.Entry.Candle.Close),
+			ExitPrice:  utils.RoundFloat(aggResult.Trade.Exit.Candle.Close),
+			PL:         utils.RoundFloat(aggResult.Trade.PL),
+			Brokerage:  utils.RoundFloat(aggResult.Trade.Brokerage),
+			ExitReason: aggResult.Trade.ExitReasonText,
+		}
+		posClosedTrades = append(posClosedTrades, trade)
 	}
 
-	text = strconv.Itoa(closedTradeCount) + " Closed Trades\n\n" + text
+	if len(posClosedTrades) > 0 {
+		closedTradeCount += len(posClosedTrades)
+		posClosedTradesFile := tgbotapi.FileBytes{
+			Name:  strategyConstants.StrategyPositional + ".csv",
+			Bytes: utils.JSONList2CSVBytes(utils.BruteStringify(posClosedTrades)),
+		}
+		bot.Send(telegramUtils.GenerateReplyDocument(update, posClosedTradesFile))
+	}
 
-	return telegramUtils.GenerateReplyMessage(update, text), nil
+	bot.Send(telegramUtils.GenerateReplyMessage(update, strconv.Itoa(closedTradeCount)+" Closed Trades"))
+
+	return nil
 }
 
 func GetClosedTrade(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
@@ -91,12 +109,11 @@ func GetClosedTrade(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 
 	userID := userSession.UserID
 
-	msg, err := getClosedTrade(update, userID)
+	err = getClosedTrade(bot, update, userID)
 
 	if err != nil {
 		return err
 	}
 
-	bot.Send(msg)
 	return nil
 }
