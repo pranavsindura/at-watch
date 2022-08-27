@@ -39,6 +39,7 @@ var isWarmUpInProgressMutex *sync.RWMutex = &sync.RWMutex{}
 var isWarmUpInProgress = false
 var marketEventEmitter *eventemitter.Emitter = eventemitter.NewEmitter(true)
 var partialCandle15m = make(map[string]*fyersTypes.FyersHistoricalCandle)
+var partialCandle15mMutex = &sync.RWMutex{}
 
 var strategyIDToPositionalStrategyMap = make(map[primitive.ObjectID]*postionalStrategy.PositionalStrategy)
 
@@ -114,12 +115,15 @@ func emitCandle(instrument string, timeFrame int, candle fyersTypes.FyersHistori
 func getPartialCandle(instrument string, timeFrame int) *fyersTypes.FyersHistoricalCandle {
 	switch timeFrame {
 	case marketConstants.TimeFrame15m:
+		partialCandle15mMutex.RLock()
 		candle, exists := partialCandle15m[instrument]
 		if !exists {
+			partialCandle15mMutex.RUnlock()
 			return nil
 		}
 		var copyCandle *fyersTypes.FyersHistoricalCandle = &fyersTypes.FyersHistoricalCandle{}
 		copier.Copy(copyCandle, candle)
+		partialCandle15mMutex.RUnlock()
 		return copyCandle
 	}
 	return nil
@@ -130,8 +134,10 @@ func setPartialCandle(instrument string, timeFrame int, candle *fyersTypes.Fyers
 	case marketConstants.TimeFrame15m:
 		var copyCandle *fyersTypes.FyersHistoricalCandle = &fyersTypes.FyersHistoricalCandle{}
 		copier.Copy(copyCandle, candle)
+		partialCandle15mMutex.Lock()
 		delete(partialCandle15m, instrument)
 		partialCandle15m[instrument] = candle
+		partialCandle15mMutex.Unlock()
 	}
 }
 
@@ -295,7 +301,9 @@ func Start() (bool, error) {
 	SetIsWarmUpInProgress(true)
 	defer SetIsWarmUpInProgress(false)
 
+	partialCandle15mMutex.Lock()
 	partialCandle15m = make(map[string]*fyersTypes.FyersHistoricalCandle)
+	partialCandle15mMutex.Unlock()
 	strategyIDToPositionalStrategyMap = make(map[primitive.ObjectID]*postionalStrategy.PositionalStrategy)
 	strategyIDToTickSubscription = make(map[primitive.ObjectID]func())
 	strategyIDToCandleSubscription = make(map[primitive.ObjectID]func())
@@ -445,62 +453,81 @@ func Start() (bool, error) {
 	fmt.Println(utils.BruteStringify(requestedInstruments))
 
 	lastWarmUpTimestampOfInstrument := make(map[string]int64)
+	lastWarmUpTimestampOfInstrumentMutex := &sync.Mutex{}
 
 	toDate := time.Now()
 	fromDate := toDate.Add(-marketConstants.WarmUpDuration)
 	// For Testing:
 	// toDate := time.Now().Add(-marketConstants.WarmUpDuration)
-	// fromDate := toDate.Add(-2 * marketConstants.WarmUpDuration)
+	// fromDate := toDate.Add(-marketConstants.WarmUpDuration)
 
+	wg := &sync.WaitGroup{}
+	var warmUpError error = nil
 	for instrumentID := range requestedInstruments {
-		candles, err := FetchHistoricalData(instrumentIDToSymbolMap[instrumentID], marketConstants.Resolution1m, fromDate, toDate, 0)
-		if err != nil {
-			OnFyersWatchError(err)
-			return false, err
-		}
-
-		fmt.Println(len(candles), "candles")
-
-		uniqueTimeFrames := make(map[int]bool)
-		// And other strategies
-		for _, pos := range instrumentIDToPositionalStrategyListMap[instrumentID] {
-			uniqueTimeFrames[pos.TimeFrame] = true
-		}
-
-		instrument := instrumentIDToSymbolMap[instrumentID]
-		for _, tick := range candles {
-			lastWarmUpTimestampOfInstrument[instrument] = tick.TS
-			// fmt.Println("sending tick", tick)
-			for timeFrame := range uniqueTimeFrames {
-				partialCandle1, completeCandle1 := updateCandle(instrument, timeFrame, marketTypes.MarketTick{TS: tick.TS, LTP: tick.Open, Volume: tick.Volume})
-				// fmt.Println("1", completeCandle1)
-				emitTick(instrument, timeFrame, *partialCandle1)
-				if completeCandle1 != nil {
-					emitCandle(instrument, timeFrame, *completeCandle1)
+		wg.Add(1)
+		fmt.Println(instrumentIDToSymbolMap[instrumentID], "symbol added")
+		go func(instrumentID primitive.ObjectID, warmUpError *error) {
+			candles, err := FetchHistoricalData(instrumentIDToSymbolMap[instrumentID], marketConstants.Resolution1m, fromDate, toDate, 0)
+			if err != nil {
+				if warmUpError == nil {
+					OnFyersWatchError(err)
+					warmUpError = &err
 				}
+				wg.Done()
+				return
+			}
 
-				partialCandle2, completeCandle2 := updateCandle(instrument, timeFrame, marketTypes.MarketTick{TS: tick.TS, LTP: tick.High, Volume: tick.Volume})
-				// fmt.Println("2", completeCandle2)
-				emitTick(instrument, timeFrame, *partialCandle2)
-				if completeCandle2 != nil {
-					emitCandle(instrument, timeFrame, *completeCandle2)
-				}
+			fmt.Println(len(candles), "candles")
 
-				partialCandle3, completeCandle3 := updateCandle(instrument, timeFrame, marketTypes.MarketTick{TS: tick.TS, LTP: tick.Low, Volume: tick.Volume})
-				// fmt.Println("3", completeCandle3)
-				emitTick(instrument, timeFrame, *partialCandle3)
-				if completeCandle3 != nil {
-					emitCandle(instrument, timeFrame, *completeCandle3)
-				}
+			uniqueTimeFrames := make(map[int]bool)
+			// And other strategies
+			for _, pos := range instrumentIDToPositionalStrategyListMap[instrumentID] {
+				uniqueTimeFrames[pos.TimeFrame] = true
+			}
 
-				partialCandle4, completeCandle4 := updateCandle(instrument, timeFrame, marketTypes.MarketTick{TS: tick.TS, LTP: tick.Close, Volume: tick.Volume})
-				// fmt.Println("4", completeCandle4)
-				emitTick(instrument, timeFrame, *partialCandle4)
-				if completeCandle4 != nil {
-					emitCandle(instrument, timeFrame, *completeCandle4)
+			instrument := instrumentIDToSymbolMap[instrumentID]
+			for _, tick := range candles {
+				lastWarmUpTimestampOfInstrumentMutex.Lock()
+				lastWarmUpTimestampOfInstrument[instrument] = tick.TS
+				lastWarmUpTimestampOfInstrumentMutex.Unlock()
+				// fmt.Println("sending tick", tick)
+				for timeFrame := range uniqueTimeFrames {
+					partialCandle1, completeCandle1 := updateCandle(instrument, timeFrame, marketTypes.MarketTick{TS: tick.TS, LTP: tick.Open, Volume: tick.Volume})
+					// fmt.Println("1", completeCandle1)
+					emitTick(instrument, timeFrame, *partialCandle1)
+					if completeCandle1 != nil {
+						emitCandle(instrument, timeFrame, *completeCandle1)
+					}
+
+					partialCandle2, completeCandle2 := updateCandle(instrument, timeFrame, marketTypes.MarketTick{TS: tick.TS, LTP: tick.High, Volume: tick.Volume})
+					// fmt.Println("2", completeCandle2)
+					emitTick(instrument, timeFrame, *partialCandle2)
+					if completeCandle2 != nil {
+						emitCandle(instrument, timeFrame, *completeCandle2)
+					}
+
+					partialCandle3, completeCandle3 := updateCandle(instrument, timeFrame, marketTypes.MarketTick{TS: tick.TS, LTP: tick.Low, Volume: tick.Volume})
+					// fmt.Println("3", completeCandle3)
+					emitTick(instrument, timeFrame, *partialCandle3)
+					if completeCandle3 != nil {
+						emitCandle(instrument, timeFrame, *completeCandle3)
+					}
+
+					partialCandle4, completeCandle4 := updateCandle(instrument, timeFrame, marketTypes.MarketTick{TS: tick.TS, LTP: tick.Close, Volume: tick.Volume})
+					// fmt.Println("4", completeCandle4)
+					emitTick(instrument, timeFrame, *partialCandle4)
+					if completeCandle4 != nil {
+						emitCandle(instrument, timeFrame, *completeCandle4)
+					}
 				}
 			}
-		}
+			wg.Done()
+		}(instrumentID, &warmUpError)
+	}
+	wg.Wait()
+
+	if warmUpError != nil {
+		return false, warmUpError
 	}
 
 	// Call OnWarmUpComplete for all strategies
