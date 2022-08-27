@@ -3,7 +3,6 @@ Effort - [0, 4] (Highest <-> Lowest)
 
 TODO
 
-P0E1 - remove strategy indicator related information once past testing phase
 P1E2 - /who
 P1E1 - /help
 P1E1 - logic for setting the updated trade in DB - with maintenance
@@ -14,6 +13,7 @@ P3E3 - any command without /start will say no results in document, because user 
 P3E0 - move strategy constants to DB
 P3E0 - logs
 
+DONE - move backtest to admin only for now
 DONE - consider sending a file on getclosedtrade since there might be too many
 DONE - options strategy
 DONE - move 15m to strategy constants
