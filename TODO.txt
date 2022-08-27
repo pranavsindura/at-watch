@@ -10,11 +10,11 @@ P1E0 - speed up strategy indicator data with goroutines
 P1E1 - send who executed the command in Admin broadcast
 P2E0 - command history
 P3E3 - any command without /start will say no results in document, because user doesnt exist, handle that
-P3E2 - consider sending a file on getclosedtrade since there might be too many
 P3E0 - move strategy constants to DB
 P3E0 - logs
 
-
+DONE - move backtest to admin only for now
+DONE - consider sending a file on getclosedtrade since there might be too many
 DONE - options strategy
 DONE - move 15m to strategy constants
 DONE - Show Last updated at price on /getopentrade
