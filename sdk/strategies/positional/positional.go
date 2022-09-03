@@ -2,6 +2,8 @@ package positionalStrategy
 
 import (
 	"fmt"
+	"math"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -526,6 +528,121 @@ func BacktestPositionalStrategy(backtestSDK *backtestSDK.BacktestSDK, instrument
 	backtestSDK.SubscribeCandle(instrument, positionalStrategyConstants.TimeFrame, pos.CreateOnCandleForBacktest(func(candle *fyersTypes.FyersHistoricalCandle) int {
 		return lots
 	}))
+
+	start, _ := time.Parse(time.RFC3339, fromDate)
+	end, _ := time.Parse(time.RFC3339, toDate)
+	backtestSDK.Backtest(instrument, positionalStrategyConstants.TimeFrame, start, end)
+
+	loss := 0.
+	lossCount := 0
+	profit := 0.
+	profitCount := 0
+	brokerage := 0.
+	finalPL := 0.
+
+	for _, trade := range pos.ClosedTrades {
+		if trade.PL > 0 {
+			profitCount++
+			profit += trade.PL
+		} else if trade.PL < 0 {
+			lossCount++
+			loss += trade.PL
+		}
+
+		brokerage += trade.Brokerage
+
+		finalPL += trade.PL - trade.Brokerage
+	}
+
+	return profit, loss, brokerage, profitCount, lossCount, profitCount + lossCount, finalPL, pos.ClosedTrades
+}
+
+func SimulatePositionalStrategy(backtestSDK *backtestSDK.BacktestSDK, instrument string, fromDate string, toDate string, lots int, tradeAmount float64, bufferAmount float64) (float64, float64, float64, int, int, int, float64, []*PositionalTrade) {
+	pos := NewPositionalStrategy(instrument)
+	pos.SetIsBacktestModeEnabled(true)
+
+	MaxMissCandleCount := 20
+	currentTradeAmount := tradeAmount
+	currentBufferAmount := bufferAmount
+	lotsWeCanAfford := 1
+	canAfford := true
+
+	missCandleCount := rand.Intn(MaxMissCandleCount)
+
+	canEnter := false
+	canEnterTradeType := marketConstants.TradeTypeNone
+
+	canExit := false
+
+	pos.SetOnCanEnter(func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, tradeType int, candleClose float64) {
+		canEnter = true
+		canEnterTradeType = tradeType
+		// fmt.Println("can enter", tradeType, candleClose)
+	})
+
+	pos.SetOnCanExit(func(ID primitive.ObjectID, timeFrame int, instrument string, userID primitive.ObjectID, exitReason int, candleClose, PL float64) {
+		canExit = true
+		// fmt.Println("can exit", exitReason, candleClose)
+	})
+
+	backtestSDK.SubscribeCandle(instrument, positionalStrategyConstants.TimeFrame, pos.OnCandle)
+	backtestSDK.SubscribeTick(instrument, positionalStrategyConstants.TimeFrame, func(fhc *fyersTypes.FyersHistoricalCandle) {
+		if canEnter || canExit {
+			if missCandleCount <= 0 {
+				if canExit {
+					trade, _ := pos.Exit(fhc.Close, false, time.Unix(fhc.TS, 0))
+					canExit = false
+					currentTradeAmount += trade.PL - trade.Brokerage
+					// fmt.Println("did exit", fhc.Close, trade.PL, currentTradeAmount, currentBufferAmount)
+				} else if canEnter && canAfford {
+					// fmt.Println("lots we can afford", lotsWeCanAfford)
+					// fmt.Println("did enter", fhc.Close, currentTradeAmount)
+					pos.Enter(fhc.Close, lots*lotsWeCanAfford, time.Unix(fhc.TS, 0), canEnterTradeType)
+					canEnter = false
+				}
+				missCandleCount = rand.Intn(MaxMissCandleCount)
+			} // else {
+			// fmt.Println("miss candle", missCandleCount, lotsWeCanAfford, canAfford)
+			// }
+			missCandleCount--
+		}
+		if currentTradeAmount < tradeAmount*float64(lotsWeCanAfford) {
+			// try to fill with buffer
+			reqAmount := tradeAmount*float64(lotsWeCanAfford) - currentTradeAmount
+			// fmt.Println("need", reqAmount, "from", currentBufferAmount)
+			if reqAmount > currentBufferAmount {
+				canAfford = false
+			} else {
+				currentBufferAmount -= reqAmount
+				currentTradeAmount += reqAmount
+			}
+			// fmt.Println("filling up using buffer", currentTradeAmount, currentBufferAmount)
+		} else {
+			// put excess into the buffer
+			excess := currentTradeAmount - tradeAmount*float64(lotsWeCanAfford)
+			currentBufferAmount += excess
+			currentTradeAmount -= excess
+			// fmt.Println("filling up excess buffer", currentTradeAmount, currentBufferAmount)
+		}
+
+		// check if we can increase the lots
+		lotsWeCanAfford = int(math.Floor((currentBufferAmount + currentTradeAmount) / (tradeAmount + bufferAmount)))
+		total := currentTradeAmount + currentBufferAmount
+		excess := total - float64(lotsWeCanAfford)*(tradeAmount+bufferAmount)
+		currentTradeAmount = float64(lotsWeCanAfford) * tradeAmount
+		currentBufferAmount = float64(lotsWeCanAfford) * bufferAmount
+		if excess > tradeAmount {
+			currentTradeAmount += tradeAmount
+			currentBufferAmount += excess - tradeAmount
+			lotsWeCanAfford++
+		} else {
+			currentBufferAmount += excess
+		}
+
+		if lotsWeCanAfford == 0 {
+			canAfford = false
+		}
+	})
 
 	start, _ := time.Parse(time.RFC3339, fromDate)
 	end, _ := time.Parse(time.RFC3339, toDate)
