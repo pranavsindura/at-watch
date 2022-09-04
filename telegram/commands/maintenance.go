@@ -11,13 +11,13 @@ import (
 )
 
 func maintenance(update telegramBot.Update) (*telegramBot.MessageConfig, error) {
-	notifications.Broadcast(constants.AccessLevelUser, "Server is performing nightly maintenance, please avoid any actions till maintenance is over")
+	notifications.Broadcast(constants.AccessLevelUser, "Server is performing maintenance, please avoid any actions till maintenance is over")
 
 	fyersSDK.SetFyersAccessToken("")
 	cache.ClearAll()
 	marketSDK.Stop()
 
-	notifications.Broadcast(constants.AccessLevelUser, "Server has finished nightly maintenance")
+	notifications.Broadcast(constants.AccessLevelUser, "Server has finished maintenance")
 
 	return telegramUtils.GenerateReplyMessage(update, "DONE"), nil
 }

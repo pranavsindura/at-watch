@@ -13,6 +13,7 @@ import (
 	routerClient "github.com/pranavsindura/at-watch/connections/router"
 	telegramClient "github.com/pranavsindura/at-watch/connections/telegram"
 	envConstants "github.com/pranavsindura/at-watch/constants/env"
+	"github.com/pranavsindura/at-watch/crons"
 	fyersSDK "github.com/pranavsindura/at-watch/sdk/fyers"
 	"github.com/pranavsindura/at-watch/telegram"
 	"github.com/rs/zerolog/log"
@@ -21,6 +22,7 @@ import (
 func main() {
 	initLogger()
 	initEnv()
+	crons.Init()
 	mongoClient.Init()
 	telegramClient.Init()
 	telegram.FetchUpdatesAndHandle()
