@@ -54,6 +54,7 @@ type PositionalTrade struct {
 	ExitReason     int                      `bson:"exitReason"`
 	ExitReasonText string                   `bson:"exitReasonText"`
 	Brokerage      float64                  `bson:"brokerage"`
+	UpdatedAt      int64                    `bson:"updatedAt"` // its possible that this field may not exist for all trades in db, newly added 4/9/22
 }
 
 var PositionalTradeCollection *mongo.Collection = nil

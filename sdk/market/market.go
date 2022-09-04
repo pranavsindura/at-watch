@@ -278,7 +278,7 @@ func OnFyersWatchDisconnect(err error) {
 	// in both cases, market will be stopped by others
 }
 
-func generateFakeNotification(instrument string, ltp float64, timeStamp time.Time, totalBuyQty int64, totalSellQty int64) fyersWatchAPI.Notification {
+func GenerateFakeNotification(instrument string, ltp float64, timeStamp time.Time, totalBuyQty int64, totalSellQty int64) fyersWatchAPI.Notification {
 	return fyersWatchAPI.Notification{
 		SymbolData: fyersWatchAPI.SymbolDataNotification{
 			Symbol:       instrument,
@@ -572,10 +572,10 @@ func Start() (bool, error) {
 	// 		instrument := instrumentIDToSymbolMap[instrumentID]
 	// 		for _, tick := range candles {
 	// 			if IsMarketWatchActive() {
-	// 				OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Open, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
-	// 				OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Low, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
-	// 				OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.High, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
-	// 				OnFyersWatchMessage(generateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Close, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
+	// 				OnFyersWatchMessage(GenerateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Open, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
+	// 				OnFyersWatchMessage(GenerateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Low, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
+	// 				OnFyersWatchMessage(GenerateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.High, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
+	// 				OnFyersWatchMessage(GenerateFakeNotification(fyersConstants.Exchange+":"+instrument, tick.Close, time.Unix(tick.TS, 0), int64(tick.Volume), int64(tick.Volume)))
 	// 				time.Sleep(time.Second)
 	// 			}
 	// 		}
@@ -669,6 +669,7 @@ func EnterPositionalTrade(strategyID primitive.ObjectID, price float64, lots int
 		Brokerage:      openTrade.Brokerage,
 		ExitReason:     openTrade.ExitReason,
 		ExitReasonText: openTrade.ExitReasonText,
+		UpdatedAt:      time.Now().Unix(),
 	}
 
 	delResult := positionalTradeModel.GetPositionalTradeCollection().FindOneAndDelete(context.Background(), bson.M{
@@ -781,6 +782,36 @@ func GetPositionalOpenTrades(userID primitive.ObjectID) ([]*postionalStrategy.Po
 	posStrategyCursor, err := positionalStrategyModel.GetPositionalStrategyCollection().
 		Find(context.Background(), bson.M{
 			"userID":   userID,
+			"isActive": true,
+		})
+	if err != nil {
+		return make([]*postionalStrategy.PositionalTrade, 0), make([]*postionalStrategy.PositionalStrategy, 0), err
+	}
+	for posStrategyCursor.Next(context.Background()) {
+		posStrategy := positionalStrategyModel.PositionalStrategy{}
+		posStrategyCursor.Decode(&posStrategy)
+		fmt.Println(utils.BruteStringify(posStrategy))
+		strategyID := posStrategy.ID
+		strategy, exists := strategyIDToPositionalStrategyMap[strategyID]
+		if !exists {
+			return make([]*postionalStrategy.PositionalTrade, 0), make([]*postionalStrategy.PositionalStrategy, 0), fmt.Errorf("system does not have knowledge of this " + strategyConstants.StrategyPositional + " strategy - " + strategyID.Hex())
+		}
+
+		openTrade := strategy.GetOpenTrade()
+		if openTrade != nil {
+			openTradeList = append(openTradeList, openTrade)
+			strategyList = append(strategyList, strategy)
+		}
+	}
+
+	return openTradeList, strategyList, nil
+}
+
+func GetAllPositionalOpenTrades() ([]*postionalStrategy.PositionalTrade, []*postionalStrategy.PositionalStrategy, error) {
+	openTradeList := make([]*postionalStrategy.PositionalTrade, 0)
+	strategyList := make([]*postionalStrategy.PositionalStrategy, 0)
+	posStrategyCursor, err := positionalStrategyModel.GetPositionalStrategyCollection().
+		Find(context.Background(), bson.M{
 			"isActive": true,
 		})
 	if err != nil {
