@@ -7,4 +7,5 @@ func AddRoutesToRouter(router *gin.Engine) {
 	publicRouterGroup.GET("/ping", Ping)
 	// publicRouterGroup.GET("/login", Login)
 	publicRouterGroup.GET("/redirect", Redirect)
+	publicRouterGroup.GET("/test", Test)
 }
