@@ -100,7 +100,7 @@ func UpdateOpenTradesInMongo() {
 			notifications.Broadcast(constants.AccessLevelCreator, "error while updating positional trades in mongo - bulk write\n\n"+err.Error())
 		} else {
 			fmt.Println("updated "+strconv.Itoa(int(res.ModifiedCount))+" positional trades in mongo", err)
-			notifications.Broadcast(constants.AccessLevelCreator, "updated "+strconv.Itoa(int(res.ModifiedCount))+" positional trades in mongo")
+			// notifications.Broadcast(constants.AccessLevelCreator, "updated "+strconv.Itoa(int(res.ModifiedCount))+" positional trades in mongo")
 		}
 	}
 }
