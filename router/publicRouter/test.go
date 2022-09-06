@@ -12,7 +12,7 @@ func Test(ctx *gin.Context) {
 	html := `
 <html>
 	<head>
-		<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+		<script src="https://code.jquery.com/jquery-1.8.3.js"></script>
 		<script>
 		</script>
 	</head>
@@ -28,7 +28,7 @@ func Test(ctx *gin.Context) {
 			data-transaction_type="BUY" 
 		>
 		</fyers-button>
-		<script src="https://api-connect-docs.fyers.in/fyers-lib.js"></script>
+		<script src="https://api-connect-docs.fyers.in/fyers-lib.js" type="text/javascript"></script>
 	</body>
 </html>
 `
