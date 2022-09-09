@@ -21,6 +21,7 @@ func GetSuperTrend(
 	prevUpperBound := 0.
 	prevLowerBound := 0.
 	prevSuperTrend := 0.
+	prevClose := 0.
 	isUsable := false
 	if prevSuperTrendData != nil {
 		currentIndex = prevSuperTrendData.Index + 1
@@ -29,8 +30,11 @@ func GetSuperTrend(
 		prevLowerBound = prevSuperTrendData.FinalLowerBound
 		prevSuperTrend = prevSuperTrendData.SuperTrend
 	}
+	if prevCandle != nil {
+		prevClose = prevCandle.Close
+	}
 
-	tr := math.Max(math.Max(currentCandle.High-currentCandle.Low, currentCandle.High-currentCandle.Close), currentCandle.Low-currentCandle.Close)
+	tr := math.Max(math.Max(currentCandle.High-currentCandle.Low, math.Abs(currentCandle.High-prevClose)), math.Abs(currentCandle.Low-prevClose))
 
 	if currentIndex < config.Period {
 		pastTRList = append(pastTRList, tr)
