@@ -116,3 +116,10 @@ const WarmUpDuration time.Duration = time.Duration(time.Hour * 24 * 365) // 1 Ye
 const (
 	Resolution1m string = "1"
 )
+
+const (
+	MarketOpenHours    int = 9
+	MarketOpenMinutes  int = 15 // 0915 hours 9:15am
+	MarketCloseHours   int = 15
+	MarketCloseMinutes int = 30 // 1530 hours 3:30pm
+)
