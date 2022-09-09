@@ -3,6 +3,7 @@ Effort - [0, 4] (Highest <-> Lowest)
 
 TODO
 
+P0E2 - Constraint fyers ticks to 9:15-3:30
 P1E1 - /help
 P1E0 - use common mongo controllers 
 P2E1 - send who executed the command in Admin broadcast

@@ -109,7 +109,7 @@ const SEBICharge float64 = 0.000001             // Rs 10 per crore -> 10/10^7 ->
 const FuturesStampDuty float64 = 0.00002        // 0.002% or ₹200 / crore (on the buy side) -> 200/10^7 -> 2 * 10^-5
 const OptionsStampDuty float64 = 0.00003        // 0.003% or ₹300 / crore (on the buy side) -> 300/10^7 -> 3 * 10^-5
 
-const WarmUpDuration time.Duration = time.Duration(time.Hour * 24 * 365 * 2) // 2 Year
+const WarmUpDuration time.Duration = time.Duration(time.Hour * 24 * 365) // 1 Year
 // For testing:
 // const WarmUpDuration time.Duration = time.Duration(time.Hour * 24 * 90) // 3 Months
 
