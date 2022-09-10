@@ -3,7 +3,6 @@ Effort - [0, 4] (Highest <-> Lowest)
 
 TODO
 
-P0E2 - Constraint fyers ticks to 9:15-3:30
 P1E1 - /help
 P1E0 - use common mongo controllers 
 P2E1 - send who executed the command in Admin broadcast
@@ -12,6 +11,7 @@ P3E3 - any command without /start will say no results in document, because user 
 P3E0 - move strategy constants to DB
 P3E0 - logs
 
+DONE - Constraint fyers ticks to 9:15-3:30
 DONE - logic for setting the updated trade in DB - with maintenance
 DONE - speed up strategy indicator data with goroutines
 DONE - move backtest to admin only for now
