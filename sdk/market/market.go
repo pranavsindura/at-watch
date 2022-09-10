@@ -544,6 +544,13 @@ func Start() (bool, error) {
 				fmt.Println("skipping this tick because it came before lastWarmUpTimestampOfInstrument", symbolWithoutExchange, time.Unix(lastWarmUpTimestampOfInstrument[symbolWithoutExchange], 0), notification.SymbolData.Timestamp)
 				continue
 			}
+			marketOpen := marketConstants.MarketOpenHours*60 + marketConstants.MarketOpenMinutes
+			marketClose := marketConstants.MarketCloseHours*60 + marketConstants.MarketCloseMinutes
+			tick := notification.SymbolData.Timestamp.Hour()*60 + notification.SymbolData.Timestamp.Minute()
+			if tick < marketOpen || tick > marketClose {
+				fmt.Println("skipping this tick because it is outside market hours", symbolWithoutExchange, time.Unix(lastWarmUpTimestampOfInstrument[symbolWithoutExchange], 0), notification.SymbolData.Timestamp)
+				continue
+			}
 			for timeFrame := range marketConstants.TimeFrameToTextMap {
 				if timeFrame == marketConstants.TimeFrameUnknown {
 					continue
