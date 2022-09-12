@@ -176,8 +176,10 @@ func (w *WatchNotifier) onConnected(socket gowebsocket.Socket, nt fyersWatchAPI.
 }
 
 func (w *WatchNotifier) OnConnectError(err error, socket gowebsocket.Socket) {
-	// not closing socket, this is causing sigsev errors
-	// socket.Close()
+	fmt.Println("got OnConnectError", err, socket.IsConnected)
+	if socket.IsConnected {
+		socket.Close()
+	}
 	w.failedAttempt++
 	if w.failedAttempt < maxAttempt {
 		w.reconnect()

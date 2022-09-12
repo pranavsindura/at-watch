@@ -270,10 +270,12 @@ func OnFyersWatchMessage(notification fyersWatchAPI.Notification) {
 }
 func OnFyersWatchError(err error) {
 	fmt.Println("error occured on fyers watch", err)
+	notifications.Broadcast(constants.AccessLevelAdmin, "Error occured on fyers watch\n\n"+err.Error())
 	Stop()
 }
 func OnFyersWatchDisconnect(err error) {
 	fmt.Println("disconnected from fyers server", err, fyersWatchNotificationChannel)
+	notifications.Broadcast(constants.AccessLevelAdmin, "Disconnected from fyers server\n\n"+err.Error())
 	// will disconnect because of either error, or outside intervention
 	// in both cases, market will be stopped by others
 }
