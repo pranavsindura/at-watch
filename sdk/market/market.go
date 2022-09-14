@@ -275,7 +275,10 @@ func OnFyersWatchError(err error) {
 }
 func OnFyersWatchDisconnect(err error) {
 	fmt.Println("disconnected from fyers server", err, fyersWatchNotificationChannel)
-	notifications.Broadcast(constants.AccessLevelAdmin, "Disconnected from fyers server\n\n"+err.Error())
+	// err can come as nil here, check before accessing err.Error()
+	if err != nil {
+		notifications.Broadcast(constants.AccessLevelAdmin, "Disconnected from fyers server\n\n"+err.Error())
+	}
 	// will disconnect because of either error, or outside intervention
 	// in both cases, market will be stopped by others
 }
