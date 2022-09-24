@@ -350,8 +350,20 @@ func StopMarketWatch() (bool, error) {
 }
 
 func AutomateAdminLogin() (bool, error) {
-	browserCtx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
+	chromeBin := os.Getenv("GOOGLE_CHROME_SHIM")
+	fmt.Println("chrome path:", chromeBin)
+
+	options := []chromedp.ExecAllocatorOption{
+		chromedp.ExecPath(chromeBin),
+		chromedp.Flag("headless", true),
+		chromedp.Flag("blink-settings", "imageEnable=false"),
+		chromedp.UserAgent(`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)`),
+	}
+	browserCtx, browserCtxCancel := chromedp.NewExecAllocator(context.Background(), options...)
+	defer browserCtxCancel()
+
+	taskCtx, taskCtxCancel := chromedp.NewContext(browserCtx)
+	defer taskCtxCancel()
 
 	loginURL := GenerateAuthCodeURL()
 
@@ -364,7 +376,7 @@ func AutomateAdminLogin() (bool, error) {
 	}
 
 	err := chromedp.Run(
-		browserCtx,
+		taskCtx,
 		chromedp.Navigate(loginURL),
 		chromedp.WaitVisible("#fy_client_id", chromedp.ByID),
 		chromedp.SendKeys("#fy_client_id", os.Getenv(envConstants.AdminClientID), chromedp.ByID),
