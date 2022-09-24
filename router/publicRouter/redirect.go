@@ -41,5 +41,5 @@ func Redirect(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Data(http.StatusOK, "text/html; charset=utf-8", []byte("<html><head><script>window.close()</script></head></html>"))
+	ctx.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<html><head><script>window.close()</script></head><body><div id="done">OK</div></body></html>`))
 }

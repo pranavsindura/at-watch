@@ -2,6 +2,7 @@ package fyersSDK
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/csv"
 	"encoding/hex"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/chromedp/chromedp"
 	envConstants "github.com/pranavsindura/at-watch/constants/env"
 	fyersConstants "github.com/pranavsindura/at-watch/constants/fyers"
 	fyersWatch "github.com/pranavsindura/at-watch/sdk/fyersWatch"
@@ -347,42 +349,44 @@ func StopMarketWatch() (bool, error) {
 	}
 }
 
-// func onMarketWatchConnect() {
-// 	fmt.Println("watch subscription is connected")
-// 	setIsMarketWatchActive(true)
-// }
+func AutomateAdminLogin() (bool, error) {
+	browserCtx, cancel := chromedp.NewContext(context.Background())
+	defer cancel()
 
-// func onMarketWatchMessage(notification api.Notification) {
-// 	fmt.Println(notification.Type, notification.SymbolData)
-// 	emitTick(notification)
-// }
-// func onMarketWatchError(err error) {
-// 	fmt.Println(fmt.Errorf("failed to watch | disconnected from watch. %v", err))
-// 	StopMarketWatch()
-// }
-// func onMarketWatchClose() {
-// 	fmt.Println("watch connection is closed")
-// }
+	loginURL := GenerateAuthCodeURL()
 
-// func emitTick(notification api.Notification) {
-// 	key := eventemitter.EventType(fyersConstants.FyersEventTick)
-// 	marketWatchEventEmitter.EmitEvent(key, notification)
-// }
+	dispatchKeyboardEventJS := func(qs string, c rune) string {
+		return `document.querySelector("` + qs + `").dispatchEvent(new KeyboardEvent("keydown", {
+			key: "` + string(c) + `",
+			keyCode: ` + strconv.Itoa(int(c)) + `,
+			code: "Key` + string(c) + `",
+		}));`
+	}
 
-// func SubscribeTick(callback func(notification api.Notification)) func() {
-// 	var handlerFn eventemitter.HandleFunc = func(arguments ...interface{}) {
-// 		var notification api.Notification = arguments[0].(api.Notification)
-// 		callback(notification)
-// 	}
+	err := chromedp.Run(
+		browserCtx,
+		chromedp.Navigate(loginURL),
+		chromedp.WaitVisible("#fy_client_id", chromedp.ByID),
+		chromedp.SendKeys("#fy_client_id", os.Getenv(envConstants.AdminClientID), chromedp.ByID),
+		chromedp.WaitVisible("#clientIdSubmit", chromedp.ByID),
+		chromedp.Click("#clientIdSubmit", chromedp.ByID),
+		chromedp.WaitVisible("#fy_client_pwd", chromedp.ByID),
+		chromedp.SendKeys("#fy_client_pwd", os.Getenv(envConstants.AdminClientPassword), chromedp.ByID),
+		chromedp.WaitVisible("#loginSubmit", chromedp.ByID),
+		chromedp.Click("#loginSubmit", chromedp.ByID),
+		chromedp.WaitVisible("#pin-container", chromedp.ByID),
+		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #first", rune(os.Getenv(envConstants.AdminClientPin)[0])), nil),
+		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #second", rune(os.Getenv(envConstants.AdminClientPin)[1])), nil),
+		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #third", rune(os.Getenv(envConstants.AdminClientPin)[2])), nil),
+		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #fourth", rune(os.Getenv(envConstants.AdminClientPin)[3])), nil),
+		chromedp.WaitVisible("#verifyPinSubmit", chromedp.ByID),
+		chromedp.Click("#verifyPinSubmit", chromedp.ByID),
+		chromedp.WaitVisible("#done", chromedp.ByID),
+	)
 
-// 	key := eventemitter.EventType(fyersConstants.FyersEventTick)
+	if err != nil {
+		return false, err
+	}
 
-// 	listener := marketWatchEventEmitter.AddListener(key, handlerFn)
-
-// 	unsubscribeFn := func() {
-// 		fmt.Println("stopping market watch tick", key)
-// 		marketWatchEventEmitter.RemoveListener(key, listener)
-// 	}
-
-// 	return unsubscribeFn
-// }
+	return true, nil
+}

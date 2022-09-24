@@ -12,9 +12,11 @@ import (
 	redisClient "github.com/pranavsindura/at-watch/connections/redis"
 	routerClient "github.com/pranavsindura/at-watch/connections/router"
 	telegramClient "github.com/pranavsindura/at-watch/connections/telegram"
+	"github.com/pranavsindura/at-watch/constants"
 	envConstants "github.com/pranavsindura/at-watch/constants/env"
 	"github.com/pranavsindura/at-watch/crons"
 	fyersSDK "github.com/pranavsindura/at-watch/sdk/fyers"
+	"github.com/pranavsindura/at-watch/sdk/notifications"
 	"github.com/pranavsindura/at-watch/telegram"
 	"github.com/rs/zerolog/log"
 )
@@ -34,6 +36,10 @@ func main() {
 	}
 
 	go herokuKeepAlive()
+
+	go attemptAutoLogin()
+
+	// go attemptStartMarket()
 
 	// Blocks all logs, init at the end
 	routerClient.Init()
@@ -71,3 +77,28 @@ func herokuKeepAlive() {
 		fmt.Println("keep alive")
 	}
 }
+
+func attemptAutoLogin() {
+	time.Sleep(time.Second * 5)
+	ok, err := fyersSDK.AutomateAdminLogin()
+	if ok {
+		fmt.Println("auto login successful")
+		notifications.Broadcast(constants.AccessLevelAdmin, "Admin Auto Login Successful")
+	} else {
+		fmt.Println("auto login unsuccessful")
+		notifications.Broadcast(constants.AccessLevelAdmin, "Admin Auto Login failed\n\n"+err.Error())
+	}
+}
+
+// func attemptStartMarket() {
+// 	cron.ParseStandard(crons.start)
+// 	time.Sleep(time.Second * 5)
+// 	_, err := marketSDK.Start()
+
+// 	if err != nil {
+// 		notifications.Broadcast(constants.AccessLevelUser, "Auto Start Market failed\n\n"+err.Error())
+// 		return
+// 	}
+// 	crons.MarketCron().Start()
+// 	notifications.Broadcast(constants.AccessLevelUser, "Market has now Started")
+// }

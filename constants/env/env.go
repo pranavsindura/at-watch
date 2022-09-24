@@ -12,3 +12,8 @@ const RedisPassword string = "REDIS_PASSWORD"
 const RedisDB string = "REDIS_DB"
 const MyURL string = "MY_URL"
 const TZ string = "TZ"
+const (
+	AdminClientID       string = "ADMIN_CLIENT_ID"
+	AdminClientPassword string = "ADMIN_CLIENT_PASSWORD"
+	AdminClientPin      string = "ADMIN_CLIENT_PIN"
+)
