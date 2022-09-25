@@ -120,7 +120,13 @@ func attemptStartMarket() {
 	} else {
 		notifications.Broadcast(constants.AccessLevelAdmin, "Auto StartMarket conditions not satisfied, time must be >="+strconv.Itoa(marketConstants.MarketOpenHours)+":"+strconv.Itoa(marketConstants.MarketOpenMinutes)+" and <"+strconv.Itoa(marketConstants.MarketCloseHours)+":"+strconv.Itoa(marketConstants.MarketCloseMinutes))
 		// schedule a job to run start market
-		id, _ := crons.ServerCron().AddFunc(cronConstants.CronStartMarket, crons.StartMarket)
+		id, _ := crons.ServerCron().AddFunc(cronConstants.CronStartMarket, func() {
+			err := attemptAutoLogin()
+			if err != nil {
+				return
+			}
+			crons.StartMarket()
+		})
 		fmt.Println("added StartMarket cron to server", cronConstants.CronStartMarket, "ID", id)
 		notifications.Broadcast(constants.AccessLevelAdmin, "Scheduled a cron for StartMarket")
 	}
