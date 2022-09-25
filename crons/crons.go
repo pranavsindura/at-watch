@@ -70,6 +70,20 @@ func StopMarket() {
 	notifications.Broadcast(constants.AccessLevelUser, "Market has now Stopped")
 }
 
+func StartMarket() {
+	_, err := marketSDK.Start()
+
+	if err != nil {
+		fmt.Println("error while starting market", err)
+		notifications.Broadcast(constants.AccessLevelCreator, "error while starting market\n\n"+err.Error())
+		return
+	}
+
+	MarketCron().Start()
+
+	notifications.Broadcast(constants.AccessLevelUser, "Market has now Started")
+}
+
 func UpdateOpenTradesInMongo() {
 	if !marketSDK.IsMarketWatchActive() {
 		fmt.Println("market watch is not active right now, cannot UpdateOpenTradesInMongo")
@@ -100,7 +114,6 @@ func UpdateOpenTradesInMongo() {
 			notifications.Broadcast(constants.AccessLevelCreator, "error while updating positional trades in mongo - bulk write\n\n"+err.Error())
 		} else {
 			fmt.Println("updated "+strconv.Itoa(int(res.ModifiedCount))+" positional trades in mongo", err)
-			// notifications.Broadcast(constants.AccessLevelCreator, "updated "+strconv.Itoa(int(res.ModifiedCount))+" positional trades in mongo")
 		}
 	}
 }

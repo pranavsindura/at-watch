@@ -350,7 +350,7 @@ func StopMarketWatch() (bool, error) {
 }
 
 func AutomateAdminLogin() (bool, error) {
-	chromeBin := os.Getenv("GOOGLE_CHROME_SHIM")
+	chromeBin := os.Getenv(envConstants.GoogleChromeBinPath)
 	fmt.Println("chrome path:", chromeBin)
 
 	options := []chromedp.ExecAllocatorOption{
@@ -379,18 +379,18 @@ func AutomateAdminLogin() (bool, error) {
 		taskCtx,
 		chromedp.Navigate(loginURL),
 		chromedp.WaitVisible("#fy_client_id", chromedp.ByID),
-		chromedp.SendKeys("#fy_client_id", os.Getenv(envConstants.AdminClientID), chromedp.ByID),
+		chromedp.SendKeys("#fy_client_id", os.Getenv(envConstants.FyersAdminClientID), chromedp.ByID),
 		chromedp.WaitVisible("#clientIdSubmit", chromedp.ByID),
 		chromedp.Click("#clientIdSubmit", chromedp.ByID),
 		chromedp.WaitVisible("#fy_client_pwd", chromedp.ByID),
-		chromedp.SendKeys("#fy_client_pwd", os.Getenv(envConstants.AdminClientPassword), chromedp.ByID),
+		chromedp.SendKeys("#fy_client_pwd", os.Getenv(envConstants.FyersAdminClientPassword), chromedp.ByID),
 		chromedp.WaitVisible("#loginSubmit", chromedp.ByID),
 		chromedp.Click("#loginSubmit", chromedp.ByID),
 		chromedp.WaitVisible("#pin-container", chromedp.ByID),
-		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #first", rune(os.Getenv(envConstants.AdminClientPin)[0])), nil),
-		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #second", rune(os.Getenv(envConstants.AdminClientPin)[1])), nil),
-		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #third", rune(os.Getenv(envConstants.AdminClientPin)[2])), nil),
-		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #fourth", rune(os.Getenv(envConstants.AdminClientPin)[3])), nil),
+		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #first", rune(os.Getenv(envConstants.FyersAdminClientPin)[0])), nil),
+		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #second", rune(os.Getenv(envConstants.FyersAdminClientPin)[1])), nil),
+		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #third", rune(os.Getenv(envConstants.FyersAdminClientPin)[2])), nil),
+		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #fourth", rune(os.Getenv(envConstants.FyersAdminClientPin)[3])), nil),
 		chromedp.WaitVisible("#verifyPinSubmit", chromedp.ByID),
 		chromedp.Click("#verifyPinSubmit", chromedp.ByID),
 		chromedp.WaitVisible("#done", chromedp.ByID),

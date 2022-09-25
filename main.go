@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -13,9 +14,12 @@ import (
 	routerClient "github.com/pranavsindura/at-watch/connections/router"
 	telegramClient "github.com/pranavsindura/at-watch/connections/telegram"
 	"github.com/pranavsindura/at-watch/constants"
+	cronConstants "github.com/pranavsindura/at-watch/constants/crons"
 	envConstants "github.com/pranavsindura/at-watch/constants/env"
+	marketConstants "github.com/pranavsindura/at-watch/constants/market"
 	"github.com/pranavsindura/at-watch/crons"
 	fyersSDK "github.com/pranavsindura/at-watch/sdk/fyers"
+	marketSDK "github.com/pranavsindura/at-watch/sdk/market"
 	"github.com/pranavsindura/at-watch/sdk/notifications"
 	"github.com/pranavsindura/at-watch/telegram"
 	"github.com/rs/zerolog/log"
@@ -30,16 +34,9 @@ func main() {
 	telegram.FetchUpdatesAndHandle()
 	redisClient.Init()
 
-	fyersAccessToken, err := cache.FyersAccessToken()
-	if err == nil {
-		fyersSDK.SetFyersAccessToken(fyersAccessToken)
-	}
-
 	go herokuKeepAlive()
 
-	go attemptAutoLogin()
-
-	// go attemptStartMarket()
+	go attemptAutoLoginAndStartMarket()
 
 	// Blocks all logs, init at the end
 	routerClient.Init()
@@ -78,27 +75,53 @@ func herokuKeepAlive() {
 	}
 }
 
-func attemptAutoLogin() {
-	time.Sleep(time.Second * 5)
-	ok, err := fyersSDK.AutomateAdminLogin()
-	if ok {
-		fmt.Println("auto login successful")
-		notifications.Broadcast(constants.AccessLevelAdmin, "Admin Auto Login Successful")
-	} else {
-		fmt.Println("auto login unsuccessful")
-		notifications.Broadcast(constants.AccessLevelAdmin, "Admin Auto Login failed\n\n"+err.Error())
+func attemptAutoLoginAndStartMarket() {
+	err := attemptAutoLogin()
+	if err != nil {
+		return
 	}
+	attemptStartMarket()
 }
 
-// func attemptStartMarket() {
-// 	cron.ParseStandard(crons.start)
-// 	time.Sleep(time.Second * 5)
-// 	_, err := marketSDK.Start()
+func attemptAutoLogin() error {
+	fyersAccessToken, err := cache.FyersAccessToken()
+	if err == nil {
+		fyersSDK.SetFyersAccessToken(fyersAccessToken)
+		notifications.Broadcast(constants.AccessLevelAdmin, "Successfully set Fyers Access token from Cache")
+	} else {
+		time.Sleep(time.Second * 5) // wait for router to init
+		ok, err := fyersSDK.AutomateAdminLogin()
+		if ok {
+			fmt.Println("auto login successful")
+			notifications.Broadcast(constants.AccessLevelAdmin, "Admin Auto Login successful")
+		} else {
+			fmt.Println("auto login unsuccessful")
+			notifications.Broadcast(constants.AccessLevelAdmin, "Admin Auto Login failed\n\n"+err.Error())
+			return err
+		}
+	}
+	return nil
+}
 
-// 	if err != nil {
-// 		notifications.Broadcast(constants.AccessLevelUser, "Auto Start Market failed\n\n"+err.Error())
-// 		return
-// 	}
-// 	crons.MarketCron().Start()
-// 	notifications.Broadcast(constants.AccessLevelUser, "Market has now Started")
-// }
+func attemptStartMarket() {
+	now := time.Now()
+	nowMinutes := now.Hour()*60 + now.Minute()
+	marketOpen := marketConstants.MarketOpenHours*60 + marketConstants.MarketOpenMinutes
+	marketClose := marketConstants.MarketCloseHours*60 + marketConstants.MarketCloseMinutes
+	if nowMinutes >= marketOpen && nowMinutes < marketClose {
+		_, err := marketSDK.Start()
+
+		if err != nil {
+			notifications.Broadcast(constants.AccessLevelAdmin, "Auto StartMarket failed\n\n"+err.Error())
+			return
+		}
+		crons.MarketCron().Start()
+		notifications.Broadcast(constants.AccessLevelUser, "Market has now Started")
+	} else {
+		notifications.Broadcast(constants.AccessLevelAdmin, "Auto StartMarket conditions not satisfied, time must be >="+strconv.Itoa(marketConstants.MarketOpenHours)+":"+strconv.Itoa(marketConstants.MarketOpenMinutes)+" and <"+strconv.Itoa(marketConstants.MarketCloseHours)+":"+strconv.Itoa(marketConstants.MarketCloseMinutes))
+		// schedule a job to run start market
+		id, _ := crons.ServerCron().AddFunc(cronConstants.CronStartMarket, crons.StartMarket)
+		fmt.Println("added StartMarket cron to server", cronConstants.CronStartMarket, "ID", id)
+		notifications.Broadcast(constants.AccessLevelAdmin, "Scheduled a cron for StartMarket")
+	}
+}

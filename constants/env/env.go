@@ -13,7 +13,8 @@ const RedisDB string = "REDIS_DB"
 const MyURL string = "MY_URL"
 const TZ string = "TZ"
 const (
-	AdminClientID       string = "ADMIN_CLIENT_ID"
-	AdminClientPassword string = "ADMIN_CLIENT_PASSWORD"
-	AdminClientPin      string = "ADMIN_CLIENT_PIN"
+	FyersAdminClientID       string = "FYERS_ADMIN_CLIENT_ID"
+	FyersAdminClientPassword string = "FYERS_ADMIN_CLIENT_PASSWORD"
+	FyersAdminClientPin      string = "FYERS_ADMIN_CLIENT_PIN"
 )
+const GoogleChromeBinPath = "GOOGLE_CHROME_SHIM"
