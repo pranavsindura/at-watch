@@ -10,6 +10,7 @@ const (
 	CommandStart             string = "start"
 	CommandStop              string = "stop"
 	CommandLogin             string = "login"
+	CommandAdminLogin        string = "adminlogin"
 	CommandMe                string = "me"
 	CommandUpdateAccessLevel string = "updateaccesslevel"
 	CommandBacktest          string = "backtest"
@@ -35,7 +36,8 @@ var MinimumAccessLevel = map[string]int{
 	CommandPing:              constants.AccessLevelNewUser,
 	CommandStart:             constants.AccessLevelCustom,
 	CommandStop:              constants.AccessLevelNewUser,
-	CommandLogin:             constants.AccessLevelAdmin,
+	CommandLogin:             constants.AccessLevelUser,
+	CommandAdminLogin:        constants.AccessLevelAdmin,
 	CommandMe:                constants.AccessLevelCustom,
 	CommandUpdateAccessLevel: constants.AccessLevelCustom,
 	CommandBacktest:          constants.AccessLevelAdmin,
