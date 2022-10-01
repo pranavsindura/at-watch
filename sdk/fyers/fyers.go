@@ -2,7 +2,6 @@ package fyersSDK
 
 import (
 	"bytes"
-	"context"
 	"crypto/sha256"
 	"encoding/csv"
 	"encoding/hex"
@@ -10,12 +9,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	URL "net/url"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/chromedp/chromedp"
 	envConstants "github.com/pranavsindura/at-watch/constants/env"
 	fyersConstants "github.com/pranavsindura/at-watch/constants/fyers"
 	fyersWatch "github.com/pranavsindura/at-watch/sdk/fyersWatch"
@@ -78,12 +77,13 @@ func getAuthorizationHeader() string {
 	return fyersAppID + ":" + GetFyersAccessToken()
 }
 
-func GenerateAuthCodeURL() string {
+func GenerateAuthCodeURL(state string) string {
 	fyersAppID := getFyersAppID()
 	fyersRedirectURL := getFyersRedirectURL()
 	url := fyersConstants.EndpointAPI + fyersConstants.GenerateAuthCodeURL
 	url = strings.Replace(url, "##CLIENT_ID##", fyersAppID, 1)
 	url = strings.Replace(url, "##REDIRECT_URI##", fyersRedirectURL, 1)
+	url = strings.Replace(url, "##STATE##", URL.QueryEscape(state), 1)
 	return url
 }
 
@@ -350,55 +350,56 @@ func StopMarketWatch() (bool, error) {
 }
 
 func AutomateAdminLogin() (bool, error) {
-	chromeBin := os.Getenv(envConstants.GoogleChromeBinPath)
-	fmt.Println("chrome path:", chromeBin)
+	return false, fmt.Errorf("auto login does not work anymore")
+	// chromeBin := os.Getenv(envConstants.GoogleChromeBinPath)
+	// fmt.Println("chrome path:", chromeBin)
 
-	options := []chromedp.ExecAllocatorOption{
-		chromedp.ExecPath(chromeBin),
-		chromedp.Flag("headless", true),
-		chromedp.Flag("blink-settings", "imageEnable=false"),
-		chromedp.UserAgent(`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)`),
-	}
-	browserCtx, browserCtxCancel := chromedp.NewExecAllocator(context.Background(), options...)
-	defer browserCtxCancel()
+	// options := []chromedp.ExecAllocatorOption{
+	// 	chromedp.ExecPath(chromeBin),
+	// 	chromedp.Flag("headless", true),
+	// 	chromedp.Flag("blink-settings", "imageEnable=false"),
+	// 	chromedp.UserAgent(`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)`),
+	// }
+	// browserCtx, browserCtxCancel := chromedp.NewExecAllocator(context.Background(), options...)
+	// defer browserCtxCancel()
 
-	taskCtx, taskCtxCancel := chromedp.NewContext(browserCtx)
-	defer taskCtxCancel()
+	// taskCtx, taskCtxCancel := chromedp.NewContext(browserCtx)
+	// defer taskCtxCancel()
 
-	loginURL := GenerateAuthCodeURL()
+	// loginURL := GenerateAuthCodeURL(generator.GenerateLoginState(fyersConstants.AdminTelegramUserID))
 
-	dispatchKeyboardEventJS := func(qs string, c rune) string {
-		return `document.querySelector("` + qs + `").dispatchEvent(new KeyboardEvent("keydown", {
-			key: "` + string(c) + `",
-			keyCode: ` + strconv.Itoa(int(c)) + `,
-			code: "Key` + string(c) + `",
-		}));`
-	}
+	// dispatchKeyboardEventJS := func(qs string, c rune) string {
+	// 	return `document.querySelector("` + qs + `").dispatchEvent(new KeyboardEvent("keydown", {
+	// 		key: "` + string(c) + `",
+	// 		keyCode: ` + strconv.Itoa(int(c)) + `,
+	// 		code: "Key` + string(c) + `",
+	// 	}));`
+	// }
 
-	err := chromedp.Run(
-		taskCtx,
-		chromedp.Navigate(loginURL),
-		chromedp.WaitVisible("#fy_client_id", chromedp.ByID),
-		chromedp.SendKeys("#fy_client_id", os.Getenv(envConstants.FyersAdminClientID), chromedp.ByID),
-		chromedp.WaitVisible("#clientIdSubmit", chromedp.ByID),
-		chromedp.Click("#clientIdSubmit", chromedp.ByID),
-		chromedp.WaitVisible("#fy_client_pwd", chromedp.ByID),
-		chromedp.SendKeys("#fy_client_pwd", os.Getenv(envConstants.FyersAdminClientPassword), chromedp.ByID),
-		chromedp.WaitVisible("#loginSubmit", chromedp.ByID),
-		chromedp.Click("#loginSubmit", chromedp.ByID),
-		chromedp.WaitVisible("#pin-container", chromedp.ByID),
-		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #first", rune(os.Getenv(envConstants.FyersAdminClientPin)[0])), nil),
-		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #second", rune(os.Getenv(envConstants.FyersAdminClientPin)[1])), nil),
-		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #third", rune(os.Getenv(envConstants.FyersAdminClientPin)[2])), nil),
-		chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #fourth", rune(os.Getenv(envConstants.FyersAdminClientPin)[3])), nil),
-		chromedp.WaitVisible("#verifyPinSubmit", chromedp.ByID),
-		chromedp.Click("#verifyPinSubmit", chromedp.ByID),
-		chromedp.WaitVisible("#done", chromedp.ByID),
-	)
+	// err := chromedp.Run(
+	// 	taskCtx,
+	// 	chromedp.Navigate(loginURL),
+	// 	chromedp.WaitVisible("#fy_client_id", chromedp.ByID),
+	// 	chromedp.SendKeys("#fy_client_id", os.Getenv(envConstants.FyersAdminClientID), chromedp.ByID),
+	// 	chromedp.WaitVisible("#clientIdSubmit", chromedp.ByID),
+	// 	chromedp.Click("#clientIdSubmit", chromedp.ByID),
+	// 	chromedp.WaitVisible("#fy_client_pwd", chromedp.ByID),
+	// 	chromedp.SendKeys("#fy_client_pwd", os.Getenv(envConstants.FyersAdminClientPassword), chromedp.ByID),
+	// 	chromedp.WaitVisible("#loginSubmit", chromedp.ByID),
+	// 	chromedp.Click("#loginSubmit", chromedp.ByID),
+	// 	chromedp.WaitVisible("#pin-container", chromedp.ByID),
+	// 	chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #first", rune(os.Getenv(envConstants.FyersAdminClientPin)[0])), nil),
+	// 	chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #second", rune(os.Getenv(envConstants.FyersAdminClientPin)[1])), nil),
+	// 	chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #third", rune(os.Getenv(envConstants.FyersAdminClientPin)[2])), nil),
+	// 	chromedp.Evaluate(dispatchKeyboardEventJS("#pin-container > #fourth", rune(os.Getenv(envConstants.FyersAdminClientPin)[3])), nil),
+	// 	chromedp.WaitVisible("#verifyPinSubmit", chromedp.ByID),
+	// 	chromedp.Click("#verifyPinSubmit", chromedp.ByID),
+	// 	chromedp.WaitVisible("#done", chromedp.ByID),
+	// )
 
-	if err != nil {
-		return false, err
-	}
+	// if err != nil {
+	// 	return false, err
+	// }
 
-	return true, nil
+	// return true, nil
 }
