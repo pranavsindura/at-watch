@@ -91,16 +91,6 @@ func attemptAutoLogin() error {
 		notifications.Broadcast(constants.AccessLevelAdmin, "Successfully set Admin Fyers Access token from Cache")
 	} else {
 		return fmt.Errorf("auto login does not work anymore")
-		// time.Sleep(time.Second * 5) // wait for router to init
-		// ok, err := fyersSDK.AutomateAdminLogin()
-		// if ok {
-		// 	fmt.Println("auto login successful")
-		// 	notifications.Broadcast(constants.AccessLevelAdmin, "Admin Auto Login successful")
-		// } else {
-		// 	fmt.Println("auto login unsuccessful")
-		// 	notifications.Broadcast(constants.AccessLevelAdmin, "Admin Auto Login failed\n\n"+err.Error())
-		// 	return err
-		// }
 	}
 	return nil
 }
