@@ -49,6 +49,7 @@ func MarketNotActiveAndNotWarmingUp(bot *tgbotapi.BotAPI, update tgbotapi.Update
 
 	return nil
 }
+
 func MarketNotWarmingUp(bot *tgbotapi.BotAPI, update tgbotapi.Update, command string) error {
 	if marketSDK.IsWarmUpInProgress() {
 		return fmt.Errorf("this operation is not allowed while market is warming up")
