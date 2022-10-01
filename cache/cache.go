@@ -94,16 +94,16 @@ func DeleteChatIDByUserID(userID primitive.ObjectID) (int64, error) {
 
 const fyersAccessTokenPrefix = "FYERS_ACCESS_TOKEN"
 
-func createFyersAccessTokenKey() string {
-	return createKey([]string{fyersAccessTokenPrefix})
+func createFyersAccessTokenKey(telegramUserID int64) string {
+	return createKey([]string{fyersAccessTokenPrefix, strconv.Itoa(int(telegramUserID))})
 }
-func FyersAccessToken() (string, error) {
-	key := createFyersAccessTokenKey()
+func FyersAccessToken(telegramUserID int64) (string, error) {
+	key := createFyersAccessTokenKey(telegramUserID)
 	getResult := redisClient.Client().Get(ctx, key)
 	return getResult.Result()
 }
-func SetFyersAccessToken(token string) (string, error) {
-	key := createFyersAccessTokenKey()
+func SetFyersAccessToken(telegramUserID int64, token string) (string, error) {
+	key := createFyersAccessTokenKey(telegramUserID)
 	now := time.Now()
 	nextDay6AM := time.Date(now.Year(), now.Month(), now.Day(), 6, 0, 0, 0, now.Location())
 	if nextDay6AM.Unix() < now.Unix() {
@@ -114,8 +114,8 @@ func SetFyersAccessToken(token string) (string, error) {
 	setResult := redisClient.Client().Set(ctx, key, token, expiration)
 	return setResult.Result()
 }
-func DeleteFyersAccessToken() (int64, error) {
-	key := createFyersAccessTokenKey()
+func DeleteFyersAccessToken(telegramUserID int64) (int64, error) {
+	key := createFyersAccessTokenKey(telegramUserID)
 	delResult := redisClient.Client().Del(ctx, key)
 	return delResult.Result()
 }

@@ -72,6 +72,7 @@ func stop(update telegramBot.Update, telegramUserID int64) (*telegramBot.Message
 	}
 	// Clear cache
 	cache.DeleteUserSession(telegramUserID)
+	cache.DeleteFyersAccessToken(telegramUserID)
 	return telegramUtils.GenerateReplyMessage(update, "Successfully deleted all data"), nil
 }
 
