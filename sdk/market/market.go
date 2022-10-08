@@ -37,7 +37,7 @@ var isMarketActiveMutex *sync.RWMutex = &sync.RWMutex{}
 var isMarketActive = false
 var isWarmUpInProgressMutex *sync.RWMutex = &sync.RWMutex{}
 var isWarmUpInProgress = false
-var marketEventEmitter *eventemitter.Emitter = eventemitter.NewEmitter(true)
+var marketEventEmitter *eventemitter.Emitter = eventemitter.NewEmitter(false)
 var partialCandle15m = make(map[string]*fyersTypes.FyersHistoricalCandle)
 var partialCandle15mMutex = &sync.RWMutex{}
 
