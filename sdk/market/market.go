@@ -73,7 +73,7 @@ func SubscribeTick(instrument string, timeFrame int, callback func(*fyersTypes.F
 func emitTick(instrument string, timeFrame int, candle fyersTypes.FyersHistoricalCandle) {
 	key := generateEventKey(marketConstants.MarketEventTick, instrument, timeFrame)
 	copyCandle := fyersTypes.FyersHistoricalCandle{}
-	err := copier.Copy(&copyCandle, &candle)
+	err := copier.CopyWithOption(&copyCandle, &candle, copier.Option{DeepCopy: true})
 
 	if err != nil {
 		fmt.Println("Not able to copy candle for tick:", candle)
@@ -103,7 +103,7 @@ func SubscribeCandle(instrument string, timeFrame int, callback func(candle *fye
 func emitCandle(instrument string, timeFrame int, candle fyersTypes.FyersHistoricalCandle) {
 	key := generateEventKey(marketConstants.MarketEventCandle, instrument, timeFrame)
 	copyCandle := fyersTypes.FyersHistoricalCandle{}
-	err := copier.Copy(&copyCandle, &candle)
+	err := copier.CopyWithOption(&copyCandle, &candle, copier.Option{DeepCopy: true})
 
 	if err != nil {
 		fmt.Println("Not able to copy candle for candle:", candle)
@@ -122,7 +122,7 @@ func getPartialCandle(instrument string, timeFrame int) *fyersTypes.FyersHistori
 			return nil
 		}
 		var copyCandle *fyersTypes.FyersHistoricalCandle = &fyersTypes.FyersHistoricalCandle{}
-		copier.Copy(copyCandle, candle)
+		copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 		partialCandle15mMutex.RUnlock()
 		return copyCandle
 	}
@@ -133,7 +133,7 @@ func setPartialCandle(instrument string, timeFrame int, candle *fyersTypes.Fyers
 	switch timeFrame {
 	case marketConstants.TimeFrame15m:
 		var copyCandle *fyersTypes.FyersHistoricalCandle = &fyersTypes.FyersHistoricalCandle{}
-		copier.Copy(copyCandle, candle)
+		copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 		partialCandle15mMutex.Lock()
 		delete(partialCandle15m, instrument)
 		partialCandle15m[instrument] = candle
@@ -166,8 +166,8 @@ func updateCandle(instrument string, timeFrame int, tickData marketTypes.MarketT
 			}
 			partialCandle = &fyersTypes.FyersHistoricalCandle{}
 			completeCandle = &fyersTypes.FyersHistoricalCandle{}
-			copier.Copy(completeCandle, lastCandle)
-			copier.Copy(partialCandle, newCandle)
+			copier.CopyWithOption(completeCandle, lastCandle, copier.Option{DeepCopy: true})
+			copier.CopyWithOption(partialCandle, newCandle, copier.Option{DeepCopy: true})
 			setPartialCandle(instrument, timeFrame, &newCandle)
 		} else {
 			// update same candle
@@ -175,7 +175,7 @@ func updateCandle(instrument string, timeFrame int, tickData marketTypes.MarketT
 			lastCandle.High = math.Max(lastCandle.High, ltp)
 			lastCandle.Low = math.Min(lastCandle.Low, ltp)
 			partialCandle = &fyersTypes.FyersHistoricalCandle{}
-			copier.Copy(partialCandle, lastCandle)
+			copier.CopyWithOption(partialCandle, lastCandle, copier.Option{DeepCopy: true})
 			setPartialCandle(instrument, timeFrame, lastCandle)
 		}
 	} else {
@@ -191,7 +191,7 @@ func updateCandle(instrument string, timeFrame int, tickData marketTypes.MarketT
 			Volume:     volume,
 		}
 		partialCandle = &fyersTypes.FyersHistoricalCandle{}
-		copier.Copy(partialCandle, firstCandle)
+		copier.CopyWithOption(partialCandle, firstCandle, copier.Option{DeepCopy: true})
 		setPartialCandle(instrument, timeFrame, &firstCandle)
 	}
 
@@ -208,7 +208,7 @@ func FetchHistoricalData(instrument string, resolution string, fromDate time.Tim
 	fmt.Println("fetching historical Data", instrument, resolution, fromDate.Local().Format(time.RFC3339), toDate.Local().Format(time.RFC3339), contFlag)
 
 	currentDate := time.Time{}
-	copier.Copy(&currentDate, &fromDate)
+	copier.CopyWithOption(&currentDate, &fromDate, copier.Option{DeepCopy: true})
 
 	for currentDate.Sub(toDate).Milliseconds() <= 0 {
 		after3Months := currentDate.AddDate(0, 3, 0)
@@ -549,9 +549,9 @@ func Start() (bool, error) {
 				fmt.Println("skipping this tick because it came before lastWarmUpTimestampOfInstrument", symbolWithoutExchange, time.Unix(lastWarmUpTimestampOfInstrument[symbolWithoutExchange], 0), notification.SymbolData.Timestamp)
 				continue
 			}
-			marketOpen := marketConstants.MarketOpenHours*60 + marketConstants.MarketOpenMinutes
-			marketClose := marketConstants.MarketCloseHours*60 + marketConstants.MarketCloseMinutes
-			tick := notification.SymbolData.Timestamp.Hour()*60 + notification.SymbolData.Timestamp.Minute()
+			marketOpen := marketConstants.MarketOpenHours*60*60 + marketConstants.MarketOpenMinutes*60
+			marketClose := marketConstants.MarketCloseHours*60*60 + marketConstants.MarketCloseMinutes*60
+			tick := notification.SymbolData.Timestamp.Hour()*60*60 + notification.SymbolData.Timestamp.Minute()*60 + notification.SymbolData.Timestamp.Second()
 			if tick < marketOpen || tick > marketClose {
 				fmt.Println("skipping this tick because it is outside market hours", symbolWithoutExchange, time.Unix(lastWarmUpTimestampOfInstrument[symbolWithoutExchange], 0), notification.SymbolData.Timestamp)
 				continue

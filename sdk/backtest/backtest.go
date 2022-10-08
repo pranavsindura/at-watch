@@ -58,7 +58,7 @@ func (sdk *BacktestSDK) SubscribeTick(instrument string, timeFrame int, callback
 func (sdk *BacktestSDK) emitTick(instrument string, timeFrame int, candle fyersTypes.FyersHistoricalCandle) {
 	key := sdk.generateEventKey(marketConstants.MarketEventTick, instrument, timeFrame)
 	copyCandle := fyersTypes.FyersHistoricalCandle{}
-	err := copier.Copy(&copyCandle, &candle)
+	err := copier.CopyWithOption(&copyCandle, &candle, copier.Option{DeepCopy: true})
 
 	if err != nil {
 		fmt.Println("Not able to copy candle for tick:", candle)
@@ -88,7 +88,7 @@ func (sdk *BacktestSDK) SubscribeCandle(instrument string, timeFrame int, callba
 func (sdk *BacktestSDK) emitCandle(instrument string, timeFrame int, candle fyersTypes.FyersHistoricalCandle) {
 	key := sdk.generateEventKey(marketConstants.MarketEventCandle, instrument, timeFrame)
 	copyCandle := fyersTypes.FyersHistoricalCandle{}
-	err := copier.Copy(&copyCandle, &candle)
+	err := copier.CopyWithOption(&copyCandle, &candle, copier.Option{DeepCopy: true})
 
 	if err != nil {
 		fmt.Println("Not able to copy candle for candle:", candle)
@@ -105,7 +105,7 @@ func (sdk *BacktestSDK) getPartialCandle(instrument string, timeFrame int) *fyer
 			return nil
 		}
 		var copyCandle *fyersTypes.FyersHistoricalCandle = &fyersTypes.FyersHistoricalCandle{}
-		copier.Copy(copyCandle, candle)
+		copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 		return copyCandle
 	}
 	return nil
@@ -115,7 +115,7 @@ func (sdk *BacktestSDK) setPartialCandle(instrument string, timeFrame int, candl
 	switch timeFrame {
 	case marketConstants.TimeFrame15m:
 		var copyCandle *fyersTypes.FyersHistoricalCandle = &fyersTypes.FyersHistoricalCandle{}
-		copier.Copy(copyCandle, candle)
+		copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 		delete(sdk.partialCandle15m, instrument)
 		sdk.partialCandle15m[instrument] = candle
 	}
@@ -146,8 +146,8 @@ func (sdk *BacktestSDK) updateCandle(instrument string, timeFrame int, tickData 
 			}
 			partialCandle = &fyersTypes.FyersHistoricalCandle{}
 			completeCandle = &fyersTypes.FyersHistoricalCandle{}
-			copier.Copy(completeCandle, lastCandle)
-			copier.Copy(partialCandle, newCandle)
+			copier.CopyWithOption(completeCandle, lastCandle, copier.Option{DeepCopy: true})
+			copier.CopyWithOption(partialCandle, newCandle, copier.Option{DeepCopy: true})
 			sdk.setPartialCandle(instrument, timeFrame, &newCandle)
 		} else {
 			// update same candle
@@ -155,7 +155,7 @@ func (sdk *BacktestSDK) updateCandle(instrument string, timeFrame int, tickData 
 			lastCandle.High = math.Max(lastCandle.High, ltp)
 			lastCandle.Low = math.Min(lastCandle.Low, ltp)
 			partialCandle = &fyersTypes.FyersHistoricalCandle{}
-			copier.Copy(partialCandle, lastCandle)
+			copier.CopyWithOption(partialCandle, lastCandle, copier.Option{DeepCopy: true})
 			sdk.setPartialCandle(instrument, timeFrame, lastCandle)
 		}
 	} else {
@@ -171,7 +171,7 @@ func (sdk *BacktestSDK) updateCandle(instrument string, timeFrame int, tickData 
 			Volume:     volume,
 		}
 		partialCandle = &fyersTypes.FyersHistoricalCandle{}
-		copier.Copy(partialCandle, firstCandle)
+		copier.CopyWithOption(partialCandle, firstCandle, copier.Option{DeepCopy: true})
 		sdk.setPartialCandle(instrument, timeFrame, &firstCandle)
 	}
 
@@ -186,7 +186,7 @@ func (sdk *BacktestSDK) Backtest(instrument string, timeFrame int, fromDate time
 	const resolution string = marketConstants.Resolution1m
 
 	currentDate := time.Time{}
-	copier.Copy(&currentDate, &fromDate)
+	copier.CopyWithOption(&currentDate, &fromDate, copier.Option{DeepCopy: true})
 
 	var allCandles [](fyersTypes.FyersHistoricalCandle) = make([]fyersTypes.FyersHistoricalCandle, 0)
 
