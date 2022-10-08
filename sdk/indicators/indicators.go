@@ -25,7 +25,7 @@ func GetSuperTrend(
 	isUsable := false
 	if prevSuperTrendData != nil {
 		currentIndex = prevSuperTrendData.Index + 1
-		copier.Copy(&pastTRList, prevSuperTrendData.PastTRList)
+		copier.CopyWithOption(&pastTRList, prevSuperTrendData.PastTRList, copier.Option{DeepCopy: true})
 		prevUpperBound = prevSuperTrendData.FinalUpperBound
 		prevLowerBound = prevSuperTrendData.FinalLowerBound
 		prevSuperTrend = prevSuperTrendData.SuperTrend

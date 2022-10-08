@@ -137,7 +137,7 @@ func (pos *PositionalStrategy) canEnter(candle *PositionalCandle) bool {
 
 func (pos *PositionalStrategy) enter(candle *PositionalCandle, lots int, forceTradeType int) *PositionalTrade {
 	copyCandle := &PositionalCandle{}
-	copier.Copy(copyCandle, candle)
+	copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 	var trade *PositionalTrade = nil
 	var tradeType int
 	if forceTradeType != marketConstants.TradeTypeNone {
@@ -203,7 +203,7 @@ func (pos *PositionalStrategy) canExit(candle *PositionalCandle, trade *Position
 
 func (pos *PositionalStrategy) exit(candle *PositionalCandle, trade *PositionalTrade, forceExit bool) *PositionalTrade {
 	copyCandle := &PositionalCandle{}
-	copier.Copy(copyCandle, candle)
+	copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 
 	var exitReason int
 	if forceExit {
@@ -219,7 +219,7 @@ func (pos *PositionalStrategy) exit(candle *PositionalCandle, trade *PositionalT
 		PL := (candle.Candle.Close - trade.Entry.Candle.Close) * float64(trade.Lots)
 
 		completedTrade = &PositionalTrade{}
-		copier.Copy(completedTrade, trade)
+		copier.CopyWithOption(completedTrade, trade, copier.Option{DeepCopy: true})
 		completedTrade.PL = PL
 		completedTrade.Exit = copyCandle
 		completedTrade.ExitReason = exitReason
@@ -229,7 +229,7 @@ func (pos *PositionalStrategy) exit(candle *PositionalCandle, trade *PositionalT
 		PL := -(candle.Candle.Close - trade.Entry.Candle.Close) * float64(trade.Lots)
 
 		completedTrade = &PositionalTrade{}
-		copier.Copy(completedTrade, trade)
+		copier.CopyWithOption(completedTrade, trade, copier.Option{DeepCopy: true})
 		completedTrade.PL = PL
 		completedTrade.Exit = copyCandle
 		completedTrade.ExitReason = exitReason
@@ -242,7 +242,7 @@ func (pos *PositionalStrategy) exit(candle *PositionalCandle, trade *PositionalT
 
 func (pos *PositionalStrategy) update(candle *PositionalCandle, trade *PositionalTrade) *PositionalTrade {
 	var updatedTrade *PositionalTrade = &PositionalTrade{}
-	copier.Copy(updatedTrade, trade)
+	copier.CopyWithOption(updatedTrade, trade, copier.Option{DeepCopy: true})
 
 	switch trade.TradeType {
 	case marketConstants.TradeTypeBuy:
@@ -305,14 +305,14 @@ func (pos *PositionalStrategy) createCandle(candle *fyersTypes.FyersHistoricalCa
 	pos.lastCandleMutex.RLock()
 	if pos.LastCandle != nil {
 		lastCandle = &fyersTypes.FyersHistoricalCandle{}
-		copier.Copy(lastCandle, pos.LastCandle.Candle)
+		copier.CopyWithOption(lastCandle, pos.LastCandle.Candle, copier.Option{DeepCopy: true})
 		lastSuperTrendData = &indicatorTypes.SuperTrendData{}
-		copier.Copy(lastSuperTrendData, pos.LastCandle.Indicators.SuperTrend)
+		copier.CopyWithOption(lastSuperTrendData, pos.LastCandle.Indicators.SuperTrend, copier.Option{DeepCopy: true})
 	}
 	pos.lastCandleMutex.RUnlock()
 	currentSuperTrendData := indicatorsSDK.GetSuperTrend(lastCandle, lastSuperTrendData, candle, pos.Config.SuperTrend)
 	var copyCandle *fyersTypes.FyersHistoricalCandle = &fyersTypes.FyersHistoricalCandle{}
-	copier.Copy(copyCandle, candle)
+	copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 	posCandle := &PositionalCandle{
 		Candle: copyCandle,
 		Indicators: &PositionalIndicators{
@@ -327,7 +327,7 @@ func (pos *PositionalStrategy) OnCandle(candle *fyersTypes.FyersHistoricalCandle
 	posCandle := pos.createCandle(candle)
 	pos.lastCandleMutex.Lock()
 	pos.LastCandle = &PositionalCandle{}
-	copier.Copy(pos.LastCandle, posCandle)
+	copier.CopyWithOption(pos.LastCandle, posCandle, copier.Option{DeepCopy: true})
 	pos.lastCandleMutex.Unlock()
 	pos.onCandle(posCandle)
 }
@@ -399,7 +399,7 @@ func (pos *PositionalStrategy) Enter(price float64, lots int, entryAt time.Time,
 	if trade != nil {
 		pos.openTradeMutex.Lock()
 		pos.OpenTrade = &PositionalTrade{}
-		copier.Copy(pos.OpenTrade, trade)
+		copier.CopyWithOption(pos.OpenTrade, trade, copier.Option{DeepCopy: true})
 		pos.openTradeMutex.Unlock()
 
 		pos.waitingToOpenTradeMutex.Lock()
@@ -473,7 +473,7 @@ func (pos *PositionalStrategy) GetOpenTrade() *PositionalTrade {
 		return nil
 	}
 	copyTrade := &PositionalTrade{}
-	copier.Copy(copyTrade, pos.OpenTrade)
+	copier.CopyWithOption(copyTrade, pos.OpenTrade, copier.Option{DeepCopy: true})
 	return copyTrade
 }
 

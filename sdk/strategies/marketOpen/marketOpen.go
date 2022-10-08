@@ -140,7 +140,7 @@ func (pos *MarketOpenStrategy) canEnter(candle *MarketOpenCandle, firstCandleOfT
 
 func (pos *MarketOpenStrategy) enter(candle *MarketOpenCandle, firstCandleOfTheDay *MarketOpenCandle, lots int, forceTradeType int) *MarketOpenTrade {
 	copyCandle := &MarketOpenCandle{}
-	copier.Copy(copyCandle, candle)
+	copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 	var trade *MarketOpenTrade = nil
 	var tradeType int
 	if forceTradeType != marketConstants.TradeTypeNone {
@@ -228,7 +228,7 @@ func (pos *MarketOpenStrategy) canExit(candle *MarketOpenCandle, trade *MarketOp
 
 func (pos *MarketOpenStrategy) exit(candle *MarketOpenCandle, trade *MarketOpenTrade, forceExit bool) *MarketOpenTrade {
 	copyCandle := &MarketOpenCandle{}
-	copier.Copy(copyCandle, candle)
+	copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 
 	var exitReason int
 	if forceExit {
@@ -244,7 +244,7 @@ func (pos *MarketOpenStrategy) exit(candle *MarketOpenCandle, trade *MarketOpenT
 		PL := (candle.Candle.Close - trade.Entry.Candle.Close) * float64(trade.Lots)
 
 		completedTrade = &MarketOpenTrade{}
-		copier.Copy(completedTrade, trade)
+		copier.CopyWithOption(completedTrade, trade, copier.Option{DeepCopy: true})
 		completedTrade.PL = PL
 		completedTrade.Exit = copyCandle
 		completedTrade.ExitReason = exitReason
@@ -254,7 +254,7 @@ func (pos *MarketOpenStrategy) exit(candle *MarketOpenCandle, trade *MarketOpenT
 		PL := -(candle.Candle.Close - trade.Entry.Candle.Close) * float64(trade.Lots)
 
 		completedTrade = &MarketOpenTrade{}
-		copier.Copy(completedTrade, trade)
+		copier.CopyWithOption(completedTrade, trade, copier.Option{DeepCopy: true})
 		completedTrade.PL = PL
 		completedTrade.Exit = copyCandle
 		completedTrade.ExitReason = exitReason
@@ -267,7 +267,7 @@ func (pos *MarketOpenStrategy) exit(candle *MarketOpenCandle, trade *MarketOpenT
 
 func (pos *MarketOpenStrategy) update(candle *MarketOpenCandle, trade *MarketOpenTrade) *MarketOpenTrade {
 	var updatedTrade *MarketOpenTrade = &MarketOpenTrade{}
-	copier.Copy(updatedTrade, trade)
+	copier.CopyWithOption(updatedTrade, trade, copier.Option{DeepCopy: true})
 
 	switch trade.TradeType {
 	case marketConstants.TradeTypeBuy:
@@ -350,7 +350,7 @@ func (pos *MarketOpenStrategy) createCandle(candle *fyersTypes.FyersHistoricalCa
 	}
 	pos.lastCandleMutex.RUnlock()
 	copyCandle := &fyersTypes.FyersHistoricalCandle{}
-	copier.Copy(copyCandle, candle)
+	copier.CopyWithOption(copyCandle, candle, copier.Option{DeepCopy: true})
 
 	if pos.LastCandle != nil && time.Unix(candle.TS, 0).Sub(time.Unix(pos.LastCandle.Candle.TS, 0)) > marketOpenStrategyConstants.TimeFrameDuration {
 		lastCandleIndex++
@@ -368,14 +368,14 @@ func (pos *MarketOpenStrategy) OnCandle(candle *fyersTypes.FyersHistoricalCandle
 	posCandle := pos.createCandle(candle)
 	// pos.lastCandleMutex.Lock()
 	// pos.LastCandle = &MarketOpenCandle{}
-	// copier.Copy(pos.LastCandle, posCandle)
+	// copier.CopyWithOption(pos.LastCandle, posCandle, copier.Option{DeepCopy: true})
 	// pos.lastCandleMutex.Unlock()
 
 	pos.firstCandleOfTheDayMutex.Lock()
 	if pos.FirstCandleOfTheDay == nil || // if FirstCandleOfTheDay does not exist
 		time.Unix(candle.TS, 0).Sub(time.Unix(pos.FirstCandleOfTheDay.Candle.TS, 0)) > time.Hour*12 { // if the times are more than 12 hours apart then its a different day
 		pos.FirstCandleOfTheDay = &MarketOpenCandle{}
-		copier.Copy(pos.FirstCandleOfTheDay, posCandle)
+		copier.CopyWithOption(pos.FirstCandleOfTheDay, posCandle, copier.Option{DeepCopy: true})
 	}
 	pos.firstCandleOfTheDayMutex.Unlock()
 
@@ -396,7 +396,7 @@ func (pos *MarketOpenStrategy) OnTick(candle *fyersTypes.FyersHistoricalCandle) 
 	posCandle := pos.createCandle(candle)
 	pos.lastCandleMutex.Lock()
 	pos.LastCandle = &MarketOpenCandle{}
-	copier.Copy(pos.LastCandle, posCandle)
+	copier.CopyWithOption(pos.LastCandle, posCandle, copier.Option{DeepCopy: true})
 	pos.lastCandleMutex.Unlock()
 
 	pos.onTick(posCandle)
@@ -440,7 +440,7 @@ func (pos *MarketOpenStrategy) Enter(price float64, lots int, entryAt time.Time,
 	if trade != nil {
 		pos.openTradeMutex.Lock()
 		pos.OpenTrade = &MarketOpenTrade{}
-		copier.Copy(pos.OpenTrade, trade)
+		copier.CopyWithOption(pos.OpenTrade, trade, copier.Option{DeepCopy: true})
 		pos.openTradeMutex.Unlock()
 
 		pos.waitingToOpenTradeMutex.Lock()
@@ -515,7 +515,7 @@ func (pos *MarketOpenStrategy) GetOpenTrade() *MarketOpenTrade {
 		return nil
 	}
 	copyTrade := &MarketOpenTrade{}
-	copier.Copy(copyTrade, pos.OpenTrade)
+	copier.CopyWithOption(copyTrade, pos.OpenTrade, copier.Option{DeepCopy: true})
 	return copyTrade
 }
 
