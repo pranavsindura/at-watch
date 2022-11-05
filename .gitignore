@@ -1,2 +1,3 @@
 .env
 *.rdb
+node_modules/
