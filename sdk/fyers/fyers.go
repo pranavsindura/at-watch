@@ -221,45 +221,43 @@ func IsValidInstrument(instrument string) (bool, error) {
 }
 
 func IsValidInstrumentMany(instruments []string) (map[string]bool, error) {
-	fmt.Println("skipping valid instrument many check, something wrong with fyers")
-	// req, err := http.NewRequest(http.MethodGet, generateNSECapitalMarketSymbolsURL(), nil)
-	// if err != nil {
-	// 	return make(map[string]bool), err
-	// }
+	req, err := http.NewRequest(http.MethodGet, generateNSECapitalMarketSymbolsURL(), nil)
+	if err != nil {
+		return make(map[string]bool), err
+	}
 
-	// res, err := http.DefaultClient.Do(req)
-	// if err != nil {
-	// 	return make(map[string]bool), err
-	// }
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return make(map[string]bool), err
+	}
 
-	// defer res.Body.Close()
-	// csvReader := csv.NewReader(res.Body)
-	// records, err := csvReader.ReadAll()
+	defer res.Body.Close()
+	csvReader := csv.NewReader(res.Body)
+	records, err := csvReader.ReadAll()
 
-	// if err != nil {
-	// 	return make(map[string]bool), err
-	// }
+	if err != nil {
+		return make(map[string]bool), err
+	}
 
-	// realInstrumentsMap := make(map[string]bool)
+	realInstrumentsMap := make(map[string]bool)
 
-	// for _, record := range records {
-	// 	if len(record) != len(fyersConstants.NSECapitalMarketSymbolsHeaders) {
-	// 		return make(map[string]bool), fmt.Errorf("IsValidInstrumentMany - symbol headers length do not match the expected length")
-	// 	}
-	// 	// 10th element is the Symbol Ticker acc to fyersConstants.NSECapitalMarketSymbolsHeaders
-	// 	symbol := ""
-	// 	if len(record[9]) <= 4 {
-	// 		return make(map[string]bool), fmt.Errorf("IsValidInstrumentMany - symbol length <= 4, cannot remove exchange \"NSE:\" from it - " + record[9])
-	// 	}
-	// 	symbol = record[9][4:]
-	// 	realInstrumentsMap[symbol] = true
-	// }
+	for _, record := range records {
+		if len(record) != len(fyersConstants.NSECapitalMarketSymbolsHeaders) {
+			return make(map[string]bool), fmt.Errorf("IsValidInstrumentMany - symbol headers length do not match the expected length")
+		}
+		// 10th element is the Symbol Ticker acc to fyersConstants.NSECapitalMarketSymbolsHeaders
+		symbol := ""
+		if len(record[9]) <= 4 {
+			return make(map[string]bool), fmt.Errorf("IsValidInstrumentMany - symbol length <= 4, cannot remove exchange \"NSE:\" from it - " + record[9])
+		}
+		symbol = record[9][4:]
+		realInstrumentsMap[symbol] = true
+	}
 
 	validInstrumentsMap := make(map[string]bool)
 	for _, instrument := range instruments {
-		// _, ok := realInstrumentsMap[instrument]
-		// validInstrumentsMap[instrument] = ok
-		validInstrumentsMap[instrument] = true
+		_, ok := realInstrumentsMap[instrument]
+		validInstrumentsMap[instrument] = ok
 	}
 
 	return validInstrumentsMap, nil
