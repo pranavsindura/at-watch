@@ -33,5 +33,6 @@ var NSECapitalMarketSymbolsHeaders = []string{
 	"Scrip code",
 	"Strike price",
 	"Option type",
-	"FyToken",
+	"Underlying FyToken",
+	"UNKNOWN",
 }
