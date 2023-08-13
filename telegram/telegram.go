@@ -62,6 +62,9 @@ func HandleUpdate(bot *telegramBot.BotAPI, update telegramBot.Update) {
 	case telegramConstants.CommandBacktest:
 		execute([]telegramTypes.Middleware{telegramMiddlewares.AccessLevelHandler, telegramMiddlewares.FyersAccessTokenExists}, telegramCommands.Backtest)
 
+	case telegramConstants.CommandGetHistoricalData:
+		execute([]telegramTypes.Middleware{telegramMiddlewares.AccessLevelHandler, telegramMiddlewares.FyersAccessTokenExists}, telegramCommands.GetHistoricalData)
+
 	case telegramConstants.CommandMaintenance:
 		execute([]telegramTypes.Middleware{telegramMiddlewares.AccessLevelHandler}, telegramCommands.Maintenance)
 

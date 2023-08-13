@@ -14,6 +14,7 @@ const (
 	CommandMe                string = "me"
 	CommandUpdateAccessLevel string = "updateaccesslevel"
 	CommandBacktest          string = "backtest"
+	CommandGetHistoricalData string = "gethistoricaldata"
 	CommandMaintenance       string = "maintenance"
 	CommandAddStrategy       string = "addstrategy"
 	CommandRemoveStrategy    string = "removestrategy"
@@ -41,6 +42,7 @@ var MinimumAccessLevel = map[string]int{
 	CommandMe:                constants.AccessLevelCustom,
 	CommandUpdateAccessLevel: constants.AccessLevelCustom,
 	CommandBacktest:          constants.AccessLevelAdmin,
+	CommandGetHistoricalData: constants.AccessLevelAdmin,
 	CommandMaintenance:       constants.AccessLevelAdmin,
 	CommandAddStrategy:       constants.AccessLevelUser,
 	CommandRemoveStrategy:    constants.AccessLevelUser,
