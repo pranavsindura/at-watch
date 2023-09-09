@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"context"
+	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	telegramClient "github.com/pranavsindura/at-watch/connections/telegram"
@@ -79,7 +80,7 @@ func Broadcast(accessLevel int, text string) error {
 		res.Decode(&user)
 		err := Notify(user.TelegramChatID, serverBroadcastText)
 		if err != nil {
-			return err
+			fmt.Println("unable to send message to user", err)
 		}
 	}
 
